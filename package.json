@@ -1,0 +1,30 @@
+{
+  "name": "capnpc-node-typescript",
+  "version": "1.0.0",
+  "description": "Generate typescript interface files for node-capnp",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zenhack/capnpc-node-typescript.git"
+  },
+  "keywords": [
+    "capnproto",
+    "typescript"
+  ],
+  "author": "Ian Denhardt",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/zenhack/capnpc-node-typescript/issues"
+  },
+  "homepage": "https://github.com/zenhack/capnpc-node-typescript#readme",
+  "dependencies": {
+    "capnp": "file:../../foreign/node-capnp"
+  },
+  "devDependencies": {
+    "@types/node": "^13.1.1"
+  }
+}
