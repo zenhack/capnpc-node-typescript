@@ -1,1 +1,7 @@
-{}
+{
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "target": "es5"
+  }
+}

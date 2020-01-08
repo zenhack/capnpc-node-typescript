@@ -1,43 +1,97 @@
-'use strict';
+import * as fs from 'fs';
 
-const fs = require('fs');
+import * as capnp from './capnp.mjs';
+import * as schema from './schema.mjs';
 
-const capnp = require('capnp');
-const schema = capnp.importSystem('capnp/schema.capnp');
+import * as iolist from './iolist';
 
-function handleCgr(cgr) {
-  const nodeMap = {};
-  for(const node of cgr.nodes) {
-    nodeMap[node.id] = node;
-  }
+type StrDict<T> = { [k: string]: T }
 
-  for(const file of cgr.requestedFiles) {
-    handleFile(nodeMap, file)
-  }
+type NodeMap = StrDict<schema.Node>
+
+interface NodeOutSpec {
+  id: string;
+  kids: StrDict<NodeOutSpec>;
 }
 
-function handleFile(nodeMap, requestedFile) {
-  const fileNode = nodeMap[requestedFile.id];
+function assertDefined<T>(arg: T | undefined): T {
+  if(arg === undefined) {
+    throw new Error('Undefined.');
+  }
+  return arg;
+}
+
+
+function formatNode(spec: NodeOutSpec, isRoot: boolean): iolist.IoList {
+  const result: iolist.IoList = [];
+  const keys = Object.getOwnPropertyNames(spec.kids);
+  for(const k of keys) {
+    const body = formatNode(spec.kids[k], false);
+    const mod = ['module ', k, ' {\n', body, '\n}\n']
+    if(isRoot) {
+      result.push(['declare ', mod]);
+    } else {
+      result.push(mod);
+    }
+  }
+  return result;
+}
+
+interface CgrOutSpec {
+  [file: string]: NodeOutSpec;
+}
+
+function formatCgr(cgr: CgrOutSpec): StrDict<iolist.IoList> {
+  const result: StrDict<iolist.IoList> = {};
+  for(const k of Object.getOwnPropertyNames(cgr)) {
+    result[k + '.d.ts'] = formatNode(cgr[k], true);
+  }
+  return result
+}
+
+function handleCgr(cgr: schema.CodeGeneratorRequest): CgrOutSpec {
+  const nodeMap: NodeMap = {};
+  for(const node of assertDefined(cgr.nodes)) {
+    nodeMap[assertDefined(node.id)] = node;
+  }
+
+  const out: CgrOutSpec = {}
+
+  for(const file of assertDefined(cgr.requestedFiles)) {
+    out[assertDefined(file.filename)] = handleFile(nodeMap, file)
+  }
+  return out;
+}
+
+function handleFile(
+  nodeMap: NodeMap,
+  requestedFile: schema.CodeGeneratorRequest.RequestedFile,
+): NodeOutSpec {
+  const fileNode = nodeMap[assertDefined(requestedFile.id)];
   const ns = handleNode(nodeMap, fileNode);
-  console.log(ns);
+  return ns
 }
 
-function handleNode(nodeMap, node) {
-  const kids = {};
-  for(const nestedNode of node.nestedNodes) {
-    const kid = nodeMap[nestedNode.id];
-    kids[nestedNode.name] = handleNode(nodeMap, kid);
+function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
+  const kids: StrDict<NodeOutSpec> = {};
+  for(const nestedNode of assertDefined(node.nestedNodes)) {
+    const kid: schema.Node = nodeMap[assertDefined(nestedNode.id)];
+    kids[assertDefined(nestedNode.name)] = handleNode(nodeMap, kid);
   }
   return {
-    id: node.id,
-    kids,
+    id: assertDefined(node.id),
+    kids: assertDefined(kids),
   }
 }
 
 function main() {
-  const buffer = fs.readFileSync('/dev/stdin');
-  const cgr = capnp.parse(schema.CodeGeneratorRequest, buffer);
-  handleCgr(cgr);
+  const buffer: Buffer = fs.readFileSync('/dev/stdin');
+  const cgr: schema.CodeGeneratorRequest = capnp.parse(schema.CodeGeneratorRequest, buffer);
+  const spec = handleCgr(cgr);
+  const fileContents = formatCgr(spec);
+  for(const path of Object.getOwnPropertyNames(fileContents)) {
+    iolist.writeFile(path, fileContents[path]);
+  }
 }
 
 main();
