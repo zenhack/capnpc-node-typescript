@@ -32,15 +32,15 @@ function formatChild(name: string, spec: NodeOutSpec): iolist.IoList {
 
   const result = [];
   if(body.length > 0) {
-    result.push(['module ', name, '{\n', body, '\n}\n']);
+    result.push(['export module ', name, '{\n', body, '\n}\n']);
   }
   if('struct' in spec) {
     result.push([
-      ['interface ', name, ' {\n'],
+      ['export interface ', name, ' {\n'],
       ['\n}\n'],
     ]);
     result.push(
-      ['const ', name, ': $Capnp.Schema<', name, '>;\n']
+      ['export const ', name, ': $Capnp.Schema<', name, '>;\n']
     );
   }
   return result;
