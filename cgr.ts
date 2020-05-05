@@ -10,6 +10,10 @@ type NodeMap = StrDict<schema.Node>
 interface NodeOutSpec {
   id: string;
   kids: StrDict<NodeOutSpec>;
+  struct?: StructOutSpec;
+}
+
+interface StructOutSpec {
 }
 
 function assertDefined<T>(arg: T | undefined): T {
@@ -20,17 +24,42 @@ function assertDefined<T>(arg: T | undefined): T {
 }
 
 
-function formatNode(spec: NodeOutSpec, isRoot: boolean): iolist.IoList {
-  const result: iolist.IoList = [];
+function formatChild(name: string, spec: NodeOutSpec, isRoot: boolean): iolist.IoList {
+  let rootItem: (item: iolist.IoList) => iolist.IoList;
+  if(isRoot) {
+    rootItem = (item) => ['declare ', item]
+  } else {
+    rootItem = (item) => item
+  }
+
+  const body = [];
+  for(const k of Object.getOwnPropertyNames(spec.kids)) {
+    body.push(formatChild(k, spec.kids[k], false));
+  }
+
+  const result = [];
+  if(body.length > 0) {
+    result.push(rootItem(['module ', name, '{\n', body, '\n}\n']));
+  }
+  if('struct' in spec) {
+    result.push(rootItem([
+      ['type ', name, ' = {\n'],
+      ['\n}\n'],
+    ]));
+    result.push(rootItem(
+      ['const ', name, ': $Capnp.Schema<', name, '>;\n']
+    ));
+  }
+  return result;
+}
+
+function formatFile(spec: NodeOutSpec): iolist.IoList {
+  const result: iolist.IoList = [
+    'import $Capnp from "capnp";\n'
+  ];
   const keys = Object.getOwnPropertyNames(spec.kids);
   for(const k of keys) {
-    const body = formatNode(spec.kids[k], false);
-    const mod = ['module ', k, ' {\n', body, '\n}\n']
-    if(isRoot) {
-      result.push(['declare ', mod]);
-    } else {
-      result.push(mod);
-    }
+    result.push(formatChild(k, spec.kids[k], true))
   }
   return result;
 }
@@ -42,7 +71,7 @@ interface CgrOutSpec {
 function formatCgr(cgr: CgrOutSpec): StrDict<iolist.IoList> {
   const result: StrDict<iolist.IoList> = {};
   for(const k of Object.getOwnPropertyNames(cgr)) {
-    result[k + '.d.ts'] = formatNode(cgr[k], true);
+    result[k + '.d.ts'] = formatFile(cgr[k]);
   }
   return result
 }
@@ -76,10 +105,14 @@ function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
     const kid: schema.Node = nodeMap[assertDefined(nestedNode.id)];
     kids[assertDefined(nestedNode.name)] = handleNode(nodeMap, kid);
   }
-  return {
+  const result: NodeOutSpec = {
     id: assertDefined(node.id),
     kids: assertDefined(kids),
   }
+  if('struct' in node) {
+    result.struct = {};
+  }
+  return result;
 }
 
 export function cgrToFileContents(cgr: schema.CodeGeneratorRequest): StrDict<iolist.IoList>  {

@@ -4,15 +4,36 @@ declare module Schema {
 
   export const CodeGeneratorRequest: Capnp.Schema<CodeGeneratorRequest>;
 
-  export interface Node {
-    id?: string;
-    displayName?: string;
-    nestedNodes?: Array<Node.NestedNode>;
+  export module Node$ {
+    export interface Common$ {
+      id?: string;
+      displayName?: string;
+      displayNamePrefixLength?: string;
+      nestedNodes?: Array<Node.NestedNode>;
+      parameters?: Array<Node.Parameter>;
+      isGeneric?: boolean;
+      scopeId?: string;
+    }
+
+    export interface File {
+    }
+
+    export interface Struct {
+      dataWordCount?: number;
+      pointerCount?: number;
+    }
+
+    type Choices$ = File | Struct;
   }
+  export type Node = Node$.Common$ & Node$.Choices$;
 
   export module Node {
     export interface NestedNode {
       id?: string;
+      name?: string;
+    }
+
+    export interface Parameter {
       name?: string;
     }
   }
