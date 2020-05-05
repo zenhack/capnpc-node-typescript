@@ -1,10 +1,11 @@
-import { promises as fs } from 'fs';
+import * as fs from 'fs';
 
 export type IoList = Array<IoList> | string;
 
-export function forEachString(list: IoList, f: (s: string) => void): void {
+type Fd = number
+
+function forEachString(list: IoList, f: (s: string) => void): void {
   if(typeof(list) === 'string') {
-    console.log(list);
     f(list);
   } else {
     for(const v of list) {
@@ -13,29 +14,21 @@ export function forEachString(list: IoList, f: (s: string) => void): void {
   }
 }
 
-export function forEachStringPromise(list: IoList, f: (s: string) => Promise<void>): Promise<void> {
-  let result = Promise.resolve();
-  forEachString(list, (s) => {
-    result = result.then(() => f(s))
-  })
-  return result;
+function writeFd(fd: Fd, data: IoList): void {
+  return forEachString(data, (s) => fs.writeSync(fd, s))
 }
 
-export function appendFile(file: fs.FileHandle, data: IoList): Promise<void> {
-  return forEachStringPromise(data, file.appendFile)
-}
-
-export async function writeFile(path: string, data: IoList): Promise<void> {
+export function writeFile(path: string, data: IoList): void {
   if(path === undefined) {
     throw new Error("undefined path!");
   }
-  let file;
+  let fd;
   try {
-    file = await fs.open(path, 'w');
-    return appendFile(file, data);
+    fd = fs.openSync(path, 'w');
+    return writeFd(fd, data);
   } finally {
-    if(file !== undefined) {
-      await file.close();
+    if(fd !== undefined) {
+      fs.closeSync(fd);
     }
   }
 }

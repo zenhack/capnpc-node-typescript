@@ -1,9 +1,10 @@
 import * as fs from 'fs';
+import * as path from 'path';
 
-import * as capnp from './capnp.mjs';
-import * as schema from './schema.mjs';
+import capnp from 'capnp';
+import schema from './schema-bootstrap.js';
 
-import * as iolist from './iolist';
+import * as iolist from './iolist.js';
 
 type StrDict<T> = { [k: string]: T }
 
@@ -89,8 +90,9 @@ function main() {
   const cgr: schema.CodeGeneratorRequest = capnp.parse(schema.CodeGeneratorRequest, buffer);
   const spec = handleCgr(cgr);
   const fileContents = formatCgr(spec);
-  for(const path of Object.getOwnPropertyNames(fileContents)) {
-    iolist.writeFile(path, fileContents[path]);
+  for(const filePath of Object.getOwnPropertyNames(fileContents)) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    iolist.writeFile(filePath, fileContents[filePath]);
   }
 }
 

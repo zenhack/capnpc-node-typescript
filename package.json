@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Generate typescript interface files for node-capnp",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,9 +23,10 @@
   },
   "homepage": "https://github.com/zenhack/capnpc-node-typescript#readme",
   "dependencies": {
-    "capnp": "file:../../foreign/node-capnp"
+    "capnp": "file:../../foreign/node-capnp",
+    "typescript": "^3.8.3"
   },
   "devDependencies": {
-    "@types/node": "^13.1.1"
+    "@types/node": "^13.9.3"
   }
 }
