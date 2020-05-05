@@ -24,44 +24,41 @@ function assertDefined<T>(arg: T | undefined): T {
 }
 
 
-function formatChild(name: string, spec: NodeOutSpec, isRoot: boolean): iolist.IoList {
-  let rootItem: (item: iolist.IoList) => iolist.IoList;
-  if(isRoot) {
-    rootItem = (item) => ['declare ', item]
-  } else {
-    rootItem = (item) => item
-  }
-
+function formatChild(name: string, spec: NodeOutSpec): iolist.IoList {
   const body = [];
   for(const k of Object.getOwnPropertyNames(spec.kids)) {
-    body.push(formatChild(k, spec.kids[k], false));
+    body.push(formatChild(k, spec.kids[k]));
   }
 
   const result = [];
   if(body.length > 0) {
-    result.push(rootItem(['module ', name, '{\n', body, '\n}\n']));
+    result.push(['module ', name, '{\n', body, '\n}\n']);
   }
   if('struct' in spec) {
-    result.push(rootItem([
-      ['type ', name, ' = {\n'],
+    result.push([
+      ['interface ', name, ' {\n'],
       ['\n}\n'],
-    ]));
-    result.push(rootItem(
+    ]);
+    result.push(
       ['const ', name, ': $Capnp.Schema<', name, '>;\n']
-    ));
+    );
   }
   return result;
 }
 
 function formatFile(spec: NodeOutSpec): iolist.IoList {
-  const result: iolist.IoList = [
-    'import $Capnp from "capnp";\n'
-  ];
+  const result: iolist.IoList = [];
   const keys = Object.getOwnPropertyNames(spec.kids);
   for(const k of keys) {
-    result.push(formatChild(k, spec.kids[k], true))
+    result.push(formatChild(k, spec.kids[k]))
   }
-  return result;
+  return [
+    'import $Capnp from "capnp";\n',
+    'declare module $tmp {\n',
+    result,
+    '\n}\n',
+    'export default $tmp;',
+  ]
 }
 
 interface CgrOutSpec {
