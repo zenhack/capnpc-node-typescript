@@ -23,18 +23,46 @@ function assertDefined<T>(arg: T | undefined): T {
   return arg;
 }
 
+function formatValueTypes(path: Array<string>, spec: NodeOutSpec, struct: StructOutSpec): iolist.IoList {
+  const result: iolist.IoList = [];
+  const keys = Object.getOwnPropertyNames(spec.kids);
+  for(const k of keys) {
+    const kid = spec.kids[k];
+    const struct = kid.struct;
+    if(struct === undefined) {
+      continue;
+    }
+    path.push(k);
+    result.push([k, ': $Capnp.Schema<types_.', path.join('.'), '> & {\n']);
+    result.push(formatValueTypes(path, kid, struct));
+    result.push('\},\n');
+    path.pop();
+  }
+  return result;
+}
 
-function formatChild(name: string, spec: NodeOutSpec): iolist.IoList {
+function formatValues(name: string, path: Array<string>, spec: NodeOutSpec): iolist.IoList {
+  const struct = spec.struct;
+  if(struct !== undefined) {
+    return [
+      ['export const ', name, ': $Capnp.Schema<types_.', path.join('.'), '> & {\n'],
+      formatValueTypes(path, spec, struct),
+      '};\n',
+    ]
+  }
+  return [];
+}
+
+function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): iolist.IoList {
   const body = [];
   for(const k of Object.getOwnPropertyNames(spec.kids)) {
-    body.push(formatChild(k, spec.kids[k]));
+    path.push(k);
+    body.push(formatTypes(k, path, spec.kids[k]));
+    path.pop();
   }
 
   const result = [];
   if('struct' in spec) {
-    result.push(
-      ['export const ', name, ': $Capnp.Schema<', name, '>;\n']
-    );
     result.push([
       ['export interface ', name, ' {\n'],
       ['\n}\n'],
@@ -47,15 +75,20 @@ function formatChild(name: string, spec: NodeOutSpec): iolist.IoList {
 }
 
 function formatFile(spec: NodeOutSpec): iolist.IoList {
-  const result: iolist.IoList = [];
+  const types: iolist.IoList = [];
+  const values: iolist.IoList = [];
   const keys = Object.getOwnPropertyNames(spec.kids);
   for(const k of keys) {
-    result.push(formatChild(k, spec.kids[k]))
+    types.push(formatTypes(k, ['types_', k], spec.kids[k]))
+    values.push(formatValues(k, [k], spec.kids[k]))
   }
   return [
     'import $Capnp from "capnp";\n',
     'declare module $tmp {\n',
-    result,
+    'export module types_ {\n',
+    types,
+    '}\n',
+    values,
     '\n}\n',
     'export default $tmp;',
   ]
