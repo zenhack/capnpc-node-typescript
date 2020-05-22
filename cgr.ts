@@ -212,6 +212,9 @@ function makeTypeRef(typ: schema.Type): TypeRef {
     return 'Buffer';
   } else if('list' in typ) {
     return { list: makeTypeRef(typ.list.elementType) }
+  } else if('anyPointer' in typ) {
+    // TODO: sanity check that node-capnp really treats all anyPointers this way.
+    return 'Buffer';
   } else {
     console.error("Can't make typeref for ", typ)
     throw new Error("TODO: handle other types.")
