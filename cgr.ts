@@ -33,7 +33,7 @@ interface FieldSpec {
 
 type TypeRef = (
   "void"
-  | "bool"
+  | "boolean"
   | "number"
   | "string"
   | "Buffer"
@@ -242,7 +242,7 @@ function makeTypeRef(typ: schema.Type): TypeRef {
   if('void' in typ) {
     return 'void'
   } else if('bool' in typ) {
-    return 'bool'
+    return 'boolean'
   } else if('int8' in typ ||
       'int16' in typ ||
       'int32' in typ ||
