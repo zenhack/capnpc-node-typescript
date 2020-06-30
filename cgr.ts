@@ -244,9 +244,15 @@ function makeTypeRef(typ: schema.Type): TypeRef {
   } else if('anyPointer' in typ) {
     // TODO: sanity check that node-capnp really treats all anyPointers this way.
     return 'Buffer';
+  } else if('struct' in typ) {
+    throw new Error("TODO: handle structs.")
+  } else if('enum' in typ) {
+    throw new Error("TODO: handle enums.")
+  } else if('interface' in typ) {
+    throw new Error("TODO: handle interfaces.")
   } else {
-    console.error("Can't make typeref for ", typ)
-    throw new Error("TODO: handle other types.")
+    console.error("Unknown type: ", typ, "; can't make type ref.");
+    throw new Error("Unknown type can't make type ref.");
   }
 }
 
