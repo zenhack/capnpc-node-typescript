@@ -196,7 +196,7 @@ function handleFile(
 
 function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
   const kids: StrDict<NodeOutSpec> = {};
-  for(const nestedNode of assertDefined(node.nestedNodes)) {
+  for(const nestedNode of node.nestedNodes || []) {
     const kid: schema.Node = nodeMap[assertDefined(nestedNode.id)];
     kids[assertDefined(nestedNode.name)] = handleNode(nodeMap, kid);
   }
