@@ -11,6 +11,11 @@ type StrDict<T> = { [k: string]: T }
 
 type NodeMap = StrDict<schema.Node>
 
+interface FileOutSpec {
+  imports: { id: string, name: string }[];
+  root: NodeOutSpec;
+}
+
 interface NodeOutSpec {
   id: string;
   kids: StrDict<NodeOutSpec>;
@@ -118,16 +123,22 @@ function formatTypeRef(typ: TypeRef): iolist.IoList {
   }
 }
 
-function formatFile(spec: NodeOutSpec): iolist.IoList {
+function formatFile(spec: FileOutSpec): iolist.IoList {
   const types: iolist.IoList = [];
   const values: iolist.IoList = [];
-  const keys = Object.getOwnPropertyNames(spec.kids);
+  const keys = Object.getOwnPropertyNames(spec.root.kids);
   for(const k of keys) {
-    types.push(formatTypes(k, ['types_', k], spec.kids[k]))
-    values.push(formatValues(k, [k], spec.kids[k]))
+    types.push(formatTypes(k, ['types_', k], spec.root.kids[k]))
+    values.push(formatValues(k, [k], spec.root.kids[k]))
+  }
+  const imports: iolist.IoList = [];
+  for(const imp of spec.imports) {
+    const path = JSON.stringify(imp.name);
+    imports.push(['import * as $', imp.id, ' from ', path, ';\n']);
   }
   return [
     'import $Capnp from "capnp";\n',
+    imports,
     'declare module $tmp {\n',
     'export module types_ {\n',
     types,
@@ -139,7 +150,7 @@ function formatFile(spec: NodeOutSpec): iolist.IoList {
 }
 
 interface CgrOutSpec {
-  [file: string]: NodeOutSpec;
+  [file: string]: FileOutSpec;
 }
 
 function formatCgr(cgr: CgrOutSpec): StrDict<iolist.IoList> {
@@ -167,10 +178,20 @@ function handleCgr(cgr: schema.CodeGeneratorRequest): CgrOutSpec {
 function handleFile(
   nodeMap: NodeMap,
   requestedFile: schema.CodeGeneratorRequest.RequestedFile,
-): NodeOutSpec {
+): FileOutSpec {
   const fileNode = nodeMap[assertDefined(requestedFile.id)];
   const ns = handleNode(nodeMap, fileNode);
-  return ns
+  const ret: FileOutSpec = {
+    imports: [],
+    root: ns,
+  };
+  for(const imp of assertDefined(requestedFile.imports)) {
+    ret.imports.push({
+      id: assertDefined(imp.id),
+      name: assertDefined(imp.name),
+    });
+  }
+  return ret;
 }
 
 function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
