@@ -3,6 +3,10 @@ import schema from './schema-bootstrap.js';
 
 import * as iolist from './iolist.js';
 
+function impossible(n: never): never {
+  return n;
+}
+
 type StrDict<T> = { [k: string]: T }
 
 type NodeMap = StrDict<schema.Node>
@@ -29,6 +33,7 @@ type TypeRef = (
   | "string"
   | "Buffer"
   | { list: TypeRef }
+  | { group: FieldSpec[] }
 );
 
 function assertDefined<T>(arg: T | undefined): T {
@@ -80,10 +85,7 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
   if('struct' in spec) {
     const struct = assertDefined(spec.struct);
     result.push(['export interface ', name, ' {\n']);
-    for(const field of struct.fields) {
-      // TODO: can we safely omit optionals for non-pointer fields?
-      result.push([field.name, '?: ', formatTypeRef(field.type)])
-    }
+    result.push(formatFields(struct.fields));
     result.push('\n}\n');
   }
   if(body.length > 0) {
@@ -92,9 +94,24 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
   return result;
 }
 
+function formatFields(fields: FieldSpec[]): iolist.IoList {
+  const result = [];
+  for(const field of fields) {
+    // TODO: can we safely omit optionals for non-pointer fields?
+    result.push([field.name, '?: ', formatTypeRef(field.type), ";"])
+  }
+  return result;
+}
+
 function formatTypeRef(typ: TypeRef): iolist.IoList {
   if(typ instanceof Object) {
-    return [formatTypeRef(typ.list), '[]']
+    if('list' in typ) {
+      return [formatTypeRef(typ.list), '[]']
+    } else if('group' in typ) {
+      return ["{", formatFields(typ.group), "}"];
+    } else {
+      return impossible(typ);
+    }
   } else {
     // some kind of string constant.
     return typ
@@ -176,8 +193,20 @@ function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
             name: assertDefined(field.name),
             type: makeTypeRef(assertDefined(field.slot.type)),
           });
+        } else if('group' in field) {
+          const groupId = assertDefined(field.group.typeId);
+          const groupNode = assertDefined(nodeMap[groupId]);
+          const groupSpec = handleNode(nodeMap, groupNode);
+          const groupStruct = groupSpec.struct;
+          if(groupStruct === undefined) {
+            throw new Error("Group field " + field.toString() + " is not a struct.");
+          }
+          fields.push({
+            name: assertDefined(field.name),
+            type: { group: groupStruct.fields },
+          });
         } else {
-          // TODO: handle groups
+          throw new Error("Unsupported field type (neither slot nor group)");
         }
       }
     }
