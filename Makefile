@@ -2,8 +2,10 @@
 all: capnp/.built
 
 capnp/.built: build/.built
-	capnp compile -o- /usr/include/capnp/*.capnp | \
-		node --experimental-modules build/index.js
+	capnp compile -o- \
+		--src-prefix=/usr/include \
+		/usr/include/capnp/*.capnp \
+		| node --experimental-modules build/index.js
 
 build/.built: \
 	$(shell find * -type f -name '*.ts') \

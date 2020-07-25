@@ -12,6 +12,7 @@ type StrDict<T> = { [k: string]: T }
 type NodeMap = StrDict<schema.Node>
 
 interface FileOutSpec {
+  filename: string;
   imports: { id: string, name: string }[];
   root: NodeOutSpec;
 }
@@ -123,7 +124,7 @@ function formatTypeRef(typ: TypeRef): iolist.IoList {
   }
 }
 
-function formatFile(spec: FileOutSpec): iolist.IoList {
+function formatDeclFile(spec: FileOutSpec): iolist.IoList {
   const types: iolist.IoList = [];
   const values: iolist.IoList = [];
   const keys = Object.getOwnPropertyNames(spec.root.kids);
@@ -133,7 +134,7 @@ function formatFile(spec: FileOutSpec): iolist.IoList {
   }
   const imports: iolist.IoList = [];
   for(const imp of spec.imports) {
-    const path = JSON.stringify(imp.name);
+    const path = JSON.stringify(imp.name + ".js");
     imports.push(['import * as $', imp.id, ' from ', path, ';\n']);
   }
   return [
@@ -149,6 +150,14 @@ function formatFile(spec: FileOutSpec): iolist.IoList {
   ]
 }
 
+function formatJsFile(spec: FileOutSpec): iolist.IoList {
+  return [
+    'import $Capnp from "capnp";\n',
+    'const $tmp = $Capnp.importSystem(', JSON.stringify(spec.filename), ')\n',
+    'export default $tmp\n',
+  ]
+}
+
 interface CgrOutSpec {
   [file: string]: FileOutSpec;
 }
@@ -156,7 +165,8 @@ interface CgrOutSpec {
 function formatCgr(cgr: CgrOutSpec): StrDict<iolist.IoList> {
   const result: StrDict<iolist.IoList> = {};
   for(const k of Object.getOwnPropertyNames(cgr)) {
-    result[k + '.d.ts'] = formatFile(cgr[k]);
+    result[k + '.d.ts'] = formatDeclFile(cgr[k]);
+    result[k + '.js'] = formatJsFile(cgr[k])
   }
   return result
 }
@@ -182,6 +192,7 @@ function handleFile(
   const fileNode = nodeMap[assertDefined(requestedFile.id)];
   const ns = handleNode(nodeMap, fileNode);
   const ret: FileOutSpec = {
+    filename: assertDefined(requestedFile.filename),
     imports: [],
     root: ns,
   };
@@ -265,6 +276,8 @@ function makeTypeRef(typ: schema.Type): TypeRef {
   } else if('anyPointer' in typ) {
     // TODO: sanity check that node-capnp really treats all anyPointers this way.
     return 'Buffer';
+  }
+  /*
   } else if('struct' in typ) {
     throw new Error("TODO: handle structs.")
   } else if('enum' in typ) {
@@ -275,6 +288,8 @@ function makeTypeRef(typ: schema.Type): TypeRef {
     console.error("Unknown type: ", typ, "; can't make type ref.");
     throw new Error("Unknown type can't make type ref.");
   }
+  */
+  return 'void';
 }
 
 export function cgrToFileContents(cgr: schema.CodeGeneratorRequest): StrDict<iolist.IoList>  {
