@@ -1,10 +1,12 @@
 
+CORE_SCHEMA ?= /usr/include
+
 all: capnp/.built
 
 capnp/.built: build/.built
 	capnp compile -o- \
-		--src-prefix=/usr/include \
-		/usr/include/capnp/*.capnp \
+		--src-prefix=$(CORE_SCHEMA)/ \
+		$(CORE_SCHEMA)/capnp/*.capnp \
 		| node --experimental-modules build/index.js
 
 build/.built: \
