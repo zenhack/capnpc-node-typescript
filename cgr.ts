@@ -112,7 +112,7 @@ function formatFields(mode: "Builder" | "Reader", fields: FieldSpec[]): iolist.I
     if(mode === 'Builder') {
       result.push('?');
     }
-    result.push([': ', formatTypeRef(mode, field.type), ";"]);
+    result.push([': ', formatTypeRef(mode, field.type), ";\n"]);
   }
   return result;
 }
