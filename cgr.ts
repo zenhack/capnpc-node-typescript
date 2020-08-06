@@ -59,7 +59,7 @@ function formatValueTypes(path: Array<string>, spec: NodeOutSpec, struct: Struct
       continue;
     }
     path.push(k);
-    result.push([k, ': $Capnp.Schema<types_.', path.join('.'), '> & {\n']);
+    result.push([k, ': $Capnp.Schema<types_.', path.join('.'), '.Reader> & {\n']);
     result.push(formatValueTypes(path, kid, struct));
     result.push('\},\n');
     path.pop();
@@ -71,7 +71,7 @@ function formatValues(name: string, path: Array<string>, spec: NodeOutSpec): iol
   const struct = spec.struct;
   if(struct !== undefined) {
     return [
-      ['export const ', name, ': $Capnp.Schema<types_.', path.join('.'), '> & {\n'],
+      ['export const ', name, ': $Capnp.Schema<types_.', path.join('.'), '.Reader> & {\n'],
       formatValueTypes(path, spec, struct),
       '};\n',
     ]
@@ -88,33 +88,41 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
   }
 
   const result = [];
+  result.push(['export module ', name, '{\n']);
   if('struct' in spec) {
     const struct = assertDefined(spec.struct);
-    result.push(['export interface ', name, ' {\n']);
-    result.push(formatFields(struct.fields));
-    result.push('\n}\n');
+    result.push([
+      formatStructInterface('Builder', struct.fields),
+      formatStructInterface('Reader', struct.fields),
+    ]);
   }
-  if(body.length > 0) {
-    result.push(['export module ', name, '{\n', body, '\n}\n']);
-  }
+  result.push(body);
+  result.push('\n}\n');
   return result;
 }
 
-function formatFields(fields: FieldSpec[]): iolist.IoList {
+function formatStructInterface(mode: "Builder" | "Reader", fields: FieldSpec[]) {
+  return ['export interface ', mode, ' {\n', formatFields(mode, fields), "\n}\n"];
+}
+
+function formatFields(mode: "Builder" | "Reader", fields: FieldSpec[]): iolist.IoList {
   const result = [];
   for(const field of fields) {
-    // TODO: can we safely omit optionals for non-pointer fields?
-    result.push([field.name, '?: ', formatTypeRef(field.type), ";"])
+    result.push(field.name);
+    if(mode === 'Builder') {
+      result.push('?');
+    }
+    result.push([': ', formatTypeRef(mode, field.type), ";"]);
   }
   return result;
 }
 
-function formatTypeRef(typ: TypeRef): iolist.IoList {
+function formatTypeRef(mode: "Builder" | "Reader", typ: TypeRef): iolist.IoList {
   if(typ instanceof Object) {
     if('list' in typ) {
-      return [formatTypeRef(typ.list), '[]']
+      return [formatTypeRef(mode, typ.list), '[]']
     } else if('group' in typ) {
-      return ["{", formatFields(typ.group), "}"];
+      return ["{", formatFields(mode, typ.group), "}"];
     } else {
       return impossible(typ);
     }
