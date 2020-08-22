@@ -7,7 +7,7 @@ import schema from './schema-bootstrap.js';
 import { cgrToFileContents } from './cgr.js';
 import * as iolist from './iolist.js';
 
-function main() {
+export function main() {
   const buffer: Buffer = fs.readFileSync('/dev/stdin');
   const cgr: schema.CodeGeneratorRequest = capnp.parse(schema.CodeGeneratorRequest, buffer);
   const fileContents = cgrToFileContents(cgr);
@@ -17,4 +17,3 @@ function main() {
   }
 }
 
-main();

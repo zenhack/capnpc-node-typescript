@@ -7,7 +7,7 @@ capnp/.built: build/.built
 	capnp compile -o- \
 		--src-prefix=$(CORE_SCHEMA)/ \
 		$(CORE_SCHEMA)/capnp/*.capnp \
-		| node --experimental-modules build/index.js
+		| ./capnpc-node-typescript.js
 
 build/.built: \
 	$(shell find * -type f -name '*.ts') \
