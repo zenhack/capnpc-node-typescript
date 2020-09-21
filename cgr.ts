@@ -142,7 +142,11 @@ function formatDeclFile(spec: FileOutSpec): iolist.IoList {
   }
   const imports: iolist.IoList = [];
   for(const imp of spec.imports) {
-    const path = JSON.stringify(imp.name + ".js");
+    let importName = imp.name;
+    while(importName.startsWith('/')) {
+      importName = importName.slice(1);
+    }
+    const path = JSON.stringify(importName + ".js");
     imports.push(['import * as $', imp.id, ' from ', path, ';\n']);
   }
   return [
