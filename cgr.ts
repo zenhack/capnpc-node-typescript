@@ -24,7 +24,8 @@ interface NodeOutSpec {
 }
 
 interface StructOutSpec {
-  fields: FieldSpec[];
+  commonFields: FieldSpec[];
+  unionFields: { [k: string]: FieldSpec[] };
 }
 
 interface FieldSpec {
@@ -39,7 +40,7 @@ type TypeRef = (
   | "string"
   | "Buffer"
   | { list: TypeRef }
-  | { group: FieldSpec[] }
+  | { group: StructOutSpec }
 );
 
 function assertDefined<T>(arg: T | undefined): T {
@@ -92,8 +93,8 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
   if('struct' in spec) {
     const struct = assertDefined(spec.struct);
     result.push([
-      formatStructInterface('Builder', struct.fields),
-      formatStructInterface('Reader', struct.fields),
+      formatStructInterface('Builder', struct),
+      formatStructInterface('Reader', struct),
     ]);
   }
   result.push(body);
@@ -101,8 +102,23 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
   return result;
 }
 
-function formatStructInterface(mode: "Builder" | "Reader", fields: FieldSpec[]) {
-  return ['export interface ', mode, ' {\n', formatFields(mode, fields), "\n}\n"];
+function formatStructInterface(mode: "Builder" | "Reader", struct: StructOutSpec) {
+  return ['type ', mode, ' = ', formatStructFields(mode, struct), "\n"];
+}
+
+function formatStructFields(mode: "Builder" | "Reader", struct: StructOutSpec) {
+  const fields = ["{ ", formatFields(mode, struct.commonFields), " }"];
+  const keys = Object.getOwnPropertyNames(struct.unionFields);
+  if(keys.length > 0) {
+    fields.push([" & ({ ", formatFields(mode, struct.unionFields[keys[0]]), " }"]);
+    for(let i = 1; i < keys.length; i++) {
+      fields.push(" | {");
+      fields.push(formatFields(mode, struct.unionFields[keys[i]]));
+      fields.push("}");
+    }
+    fields.push(" | {})");
+  }
+  return fields;
 }
 
 function formatFields(mode: "Builder" | "Reader", fields: FieldSpec[]): iolist.IoList {
@@ -122,7 +138,7 @@ function formatTypeRef(mode: "Builder" | "Reader", typ: TypeRef): iolist.IoList 
     if('list' in typ) {
       return [formatTypeRef(mode, typ.list), '[]']
     } else if('group' in typ) {
-      return ["{", formatFields(mode, typ.group), "}"];
+      return formatStructFields(mode, typ.group);
     } else {
       return impossible(typ);
     }
@@ -227,11 +243,19 @@ function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
     id: assertDefined(node.id),
     kids: assertDefined(kids),
   }
+  // TODO; we use the hard-coded 0xffff value of noDiscriminant here; instead,
+  // use the value as exposed by node capnp.
+
   if('struct' in node) {
-    // TODO: make note of union variants.
-    const fields: FieldSpec[] = [];
+    const unionFields: { [k: string]: FieldSpec[] } = {};
+    unionFields[0xffff] = [];
     if('fields' in node.struct) {
       for(const field of assertDefined(node.struct.fields)) {
+        const tag = assertDefined(field.discriminantValue);
+        if(!(tag in unionFields)) {
+          unionFields[tag] = [];
+        }
+        const fields = assertDefined(unionFields[tag]);
         if('slot' in field) {
           fields.push({
             name: assertDefined(field.name),
@@ -247,16 +271,16 @@ function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
           }
           fields.push({
             name: assertDefined(field.name),
-            type: { group: groupStruct.fields },
+            type: { group: groupStruct },
           });
         } else {
           throw new Error("Unsupported field type (neither slot nor group)");
         }
       }
     }
-    result.struct = {
-      fields,
-    };
+    const commonFields = unionFields[0xffff];
+    delete unionFields[0xffff];
+    result.struct = { commonFields, unionFields };
   }
   return result;
 }
