@@ -25,7 +25,7 @@ interface NodeOutSpec {
 
 interface StructOutSpec {
   commonFields: FieldSpec[];
-  unionFields: { [k: string]: FieldSpec[] };
+  unionFields: StrDict<FieldSpec[]>;
 }
 
 interface FieldSpec {
@@ -247,7 +247,7 @@ function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
   // use the value as exposed by node capnp.
 
   if('struct' in node) {
-    const unionFields: { [k: string]: FieldSpec[] } = {};
+    const unionFields: StrDict<FieldSpec[]> = {};
     unionFields[0xffff] = [];
     if('fields' in node.struct) {
       for(const field of assertDefined(node.struct.fields)) {
