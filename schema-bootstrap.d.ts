@@ -57,6 +57,7 @@ declare module Schema {
     | { text: null }
     | { data: null }
     | { list: { elementType: Type } }
+    | { struct: { typeId: string } }
     ;
 
   export module Field$ {

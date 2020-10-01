@@ -41,6 +41,7 @@ type TypeRef = (
   | "Buffer"
   | { list: TypeRef }
   | { group: StructOutSpec }
+  | { structId: string }
 );
 
 function assertDefined<T>(arg: T | undefined): T {
@@ -155,6 +156,9 @@ function formatTypeRef(mode: "Builder" | "Reader", typ: TypeRef): iolist.IoList 
       return [formatTypeRef(mode, typ.list), '[]']
     } else if('group' in typ) {
       return formatStructFields(mode, typ.group);
+    } else if('structId' in typ) {
+      // FIXME: include the file if needed, somehow.
+      return ['$', typ.structId, '.', mode];
     } else {
       return impossible(typ);
     }
@@ -331,10 +335,10 @@ function makeTypeRef(typ: schema.Type): TypeRef {
   } else if('anyPointer' in typ) {
     // TODO: sanity check that node-capnp really treats all anyPointers this way.
     return 'Buffer';
+  } else if('struct' in typ) {
+    return { structId: typ.struct.typeId }
   }
   /*
-  } else if('struct' in typ) {
-    throw new Error("TODO: handle structs.")
   } else if('enum' in typ) {
     throw new Error("TODO: handle enums.")
   } else if('interface' in typ) {
