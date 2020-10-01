@@ -80,6 +80,22 @@ function formatValues(name: string, path: Array<string>, spec: NodeOutSpec): iol
   return [];
 }
 
+function formatTypesById(path: iolist.IoList, spec: NodeOutSpec): iolist.IoList {
+  const ret: iolist.IoList = ['export module $', spec.id, ' {\n'];
+  if('struct' in spec) {
+    ret.push([
+      'export type Builder = ', path, '.Builder;\n',
+      'export type Reader = ', path, '.Reader;\n',
+    ]);
+  }
+  ret.push('}\n');
+  for(const k in spec.kids) {
+    const kid = spec.kids[k];
+    ret.push(formatTypesById([path, '.', k], kid));
+  }
+  return ret;
+}
+
 function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): iolist.IoList {
   const body = [];
   for(const k of Object.getOwnPropertyNames(spec.kids)) {
@@ -153,7 +169,10 @@ function formatDeclFile(spec: FileOutSpec): iolist.IoList {
   const values: iolist.IoList = [];
   const keys = Object.getOwnPropertyNames(spec.root.kids);
   for(const k of keys) {
-    types.push(formatTypes(k, ['types_', k], spec.root.kids[k]))
+    types.push([
+      formatTypes(k, ['types_', k], spec.root.kids[k]),
+      formatTypesById(['types_.', k], spec.root.kids[k]),
+    ])
     values.push(formatValues(k, [k], spec.root.kids[k]))
   }
   const imports: iolist.IoList = [];
