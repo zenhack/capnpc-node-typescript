@@ -83,6 +83,10 @@ declare module Schema {
   }
   export type Field = Field$.Common$ & Field$.Choices$;
 
+  export module Field {
+    export const noDiscriminant: number;
+  }
+
   export interface CodeGeneratorRequest {
     nodes?: Array<Node>;
     requestedFiles?: Array<CodeGeneratorRequest.RequestedFile>;

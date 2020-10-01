@@ -243,12 +243,12 @@ function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
     id: assertDefined(node.id),
     kids: assertDefined(kids),
   }
-  // TODO; we use the hard-coded 0xffff value of noDiscriminant here; instead,
-  // use the value as exposed by node capnp.
+
+  const noDiscrim = schema.Field.noDiscriminant;
 
   if('struct' in node) {
     const unionFields: StrDict<FieldSpec[]> = {};
-    unionFields[0xffff] = [];
+    unionFields[noDiscrim] = [];
     if('fields' in node.struct) {
       for(const field of assertDefined(node.struct.fields)) {
         const tag = assertDefined(field.discriminantValue);
@@ -278,8 +278,8 @@ function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
         }
       }
     }
-    const commonFields = unionFields[0xffff];
-    delete unionFields[0xffff];
+    const commonFields = unionFields[noDiscrim];
+    delete unionFields[noDiscrim];
     result.struct = { commonFields, unionFields };
   }
   return result;
