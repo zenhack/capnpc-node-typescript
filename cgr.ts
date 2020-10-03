@@ -51,6 +51,22 @@ function assertDefined<T>(arg: T | undefined): T {
   return arg;
 }
 
+function findNodeFile(nodeId: string, nodeMap: NodeMap): schema.Node {
+  // Find the root scope of 'nodeId', which must be a file. Throws
+  // if node's root scope is not a file, or if some node in the chain is
+  // not in the nodeMap.
+
+  let node = nodeMap[nodeId];
+  while(nodeId !== '0') {
+    node = nodeMap[assertDefined(node.scopeId)];
+    nodeId = assertDefined(node.id);
+  }
+  if(node === undefined || !('file' in node)) {
+    throw new Error("node's root scope is not a file!");
+  }
+  return node;
+}
+
 function formatValueTypes(path: Array<string>, spec: NodeOutSpec, struct: StructOutSpec): iolist.IoList {
   const result: iolist.IoList = [];
   const keys = Object.getOwnPropertyNames(spec.kids);
