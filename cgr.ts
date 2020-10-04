@@ -41,7 +41,7 @@ type TypeRef = (
   | "Buffer"
   | { list: TypeRef }
   | { group: StructOutSpec }
-  | { structId: string }
+  | { struct: { typeId: string, fileId?: string } }
 );
 
 function assertDefined<T>(arg: T | undefined): T {
@@ -56,12 +56,16 @@ function findNodeFile(nodeId: string, nodeMap: NodeMap): schema.Node {
   // if node's root scope is not a file, or if some node in the chain is
   // not in the nodeMap.
 
-  let node = nodeMap[nodeId];
-  while(nodeId !== '0') {
-    node = nodeMap[assertDefined(node.scopeId)];
-    nodeId = assertDefined(node.id);
-  }
-  if(node === undefined || !('file' in node)) {
+  let node;
+  do {
+    node = nodeMap[nodeId];
+    if(node === undefined) {
+      throw new Error("Couldn't climb scope; " + nodeId + " is not in the NodeMap");
+    }
+    nodeId = assertDefined(node.scopeId);
+  } while(nodeId !== '0');
+
+  if(!('file' in node)) {
     throw new Error("node's root scope is not a file!");
   }
   return node;
@@ -172,9 +176,13 @@ function formatTypeRef(mode: "Builder" | "Reader", typ: TypeRef): iolist.IoList 
       return [formatTypeRef(mode, typ.list), '[]']
     } else if('group' in typ) {
       return formatStructFields(mode, typ.group);
-    } else if('structId' in typ) {
-      // FIXME: include the file if needed, somehow.
-      return ['$', typ.structId, '.', mode];
+    } else if('struct' in typ) {
+      const struct = typ.struct;
+      let ret: iolist.IoList = ['$', struct.typeId, '.', mode];
+      if('fileId' in struct) {
+        ret = ['$', assertDefined(struct.fileId), '.', ret];
+      }
+      return ret;
     } else {
       return impossible(typ);
     }
@@ -256,8 +264,9 @@ function handleFile(
   nodeMap: NodeMap,
   requestedFile: schema.CodeGeneratorRequest.RequestedFile,
 ): FileOutSpec {
-  const fileNode = nodeMap[assertDefined(requestedFile.id)];
-  const ns = handleNode(nodeMap, fileNode);
+  const fileId = assertDefined(requestedFile.id);
+  const fileNode = nodeMap[fileId];
+  const ns = handleNode(nodeMap, fileId, fileNode);
   const ret: FileOutSpec = {
     filename: assertDefined(requestedFile.filename),
     imports: [],
@@ -272,11 +281,11 @@ function handleFile(
   return ret;
 }
 
-function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
+function handleNode(nodeMap: NodeMap, thisFileId: string, node: schema.Node): NodeOutSpec {
   const kids: StrDict<NodeOutSpec> = {};
   for(const nestedNode of node.nestedNodes || []) {
     const kid: schema.Node = nodeMap[assertDefined(nestedNode.id)];
-    kids[assertDefined(nestedNode.name)] = handleNode(nodeMap, kid);
+    kids[assertDefined(nestedNode.name)] = handleNode(nodeMap, thisFileId, kid);
   }
   const result: NodeOutSpec = {
     id: assertDefined(node.id),
@@ -298,12 +307,12 @@ function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
         if('slot' in field) {
           fields.push({
             name: assertDefined(field.name),
-            type: makeTypeRef(assertDefined(field.slot.type)),
+            type: makeTypeRef(nodeMap, thisFileId, assertDefined(field.slot.type)),
           });
         } else if('group' in field) {
           const groupId = assertDefined(field.group.typeId);
           const groupNode = assertDefined(nodeMap[groupId]);
-          const groupSpec = handleNode(nodeMap, groupNode);
+          const groupSpec = handleNode(nodeMap, thisFileId, groupNode);
           const groupStruct = groupSpec.struct;
           if(groupStruct === undefined) {
             throw new Error("Group field " + field.toString() + " is not a struct.");
@@ -324,7 +333,7 @@ function handleNode(nodeMap: NodeMap, node: schema.Node): NodeOutSpec {
   return result;
 }
 
-function makeTypeRef(typ: schema.Type): TypeRef {
+function makeTypeRef(nodeMap: NodeMap, thisFileId: string, typ: schema.Type): TypeRef {
   if('void' in typ) {
     return 'void'
   } else if('bool' in typ) {
@@ -347,12 +356,18 @@ function makeTypeRef(typ: schema.Type): TypeRef {
   } else if('data' in typ) {
     return 'Buffer';
   } else if('list' in typ) {
-    return { list: makeTypeRef(typ.list.elementType) }
+    return { list: makeTypeRef(nodeMap, thisFileId, typ.list.elementType) }
   } else if('anyPointer' in typ) {
     // TODO: sanity check that node-capnp really treats all anyPointers this way.
     return 'Buffer';
   } else if('struct' in typ) {
-    return { structId: typ.struct.typeId }
+    const typeId = typ.struct.typeId;
+    const fileId = assertDefined(findNodeFile(typeId, nodeMap).id);
+    if(fileId === thisFileId) {
+      return { struct: { typeId } }
+    } else {
+      return { struct: { typeId, fileId } }
+    }
   }
   /*
   } else if('enum' in typ) {
