@@ -23,6 +23,7 @@ interface NodeOutSpec {
   id: NodeId;
   kids: StrDict<NodeOutSpec>;
   struct?: StructOutSpec;
+  enum?: string[];
 }
 
 interface StructOutSpec {
@@ -43,8 +44,14 @@ type TypeRef = (
   | "Buffer"
   | { list: TypeRef }
   | { group: StructOutSpec }
-  | { struct: { typeId: NodeId, fileId?: NodeId } }
+  | { struct: TypeById }
+  | { enum: TypeById }
 );
+
+interface TypeById {
+  typeId: NodeId;
+  fileId?: NodeId;
+}
 
 function assertDefined<T>(arg: T | undefined): T {
   if(arg === undefined) {
@@ -105,7 +112,7 @@ function formatValues(name: string, path: Array<string>, spec: NodeOutSpec): iol
 
 function formatTypesById(path: iolist.IoList, spec: NodeOutSpec): iolist.IoList {
   const ret: iolist.IoList = ['export module $', spec.id, ' {\n'];
-  if('struct' in spec) {
+  if('struct' in spec || 'enum' in spec) {
     ret.push([
       'export type Builder = ', path, '.Builder;\n',
       'export type Reader = ', path, '.Reader;\n',
@@ -135,13 +142,31 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
       formatStructInterface('Builder', struct),
       formatStructInterface('Reader', struct),
     ]);
+  } else if('enum' in spec) {
+    const enu = assertDefined(spec.enum);
+    result.push([
+      formatEnumInterface('Builder', enu),
+      formatEnumInterface('Reader', enu),
+    ]);
   }
   result.push(body);
   result.push('\n}\n');
   return result;
 }
 
-function formatStructInterface(mode: "Builder" | "Reader", struct: StructOutSpec) {
+function formatEnumInterface(mode: "Builder" | "Reader", enumerants: string[]): iolist.IoList {
+  let ret: iolist.IoList = ['type ', mode, ' = '];
+  for(let i = 0; i < enumerants.length; i++) {
+    ret = [ret, ' | ', JSON.stringify(enumerants[i])];
+  }
+  if(mode === 'Reader') {
+    ret = [ret, ' | number'];
+  }
+  ret = [ret, ';\n'];
+  return ret;
+}
+
+function formatStructInterface(mode: "Builder" | "Reader", struct: StructOutSpec): iolist.IoList {
   return ['type ', mode, ' = ', formatStructFields(mode, struct), "\n"];
 }
 
@@ -172,6 +197,14 @@ function formatFields(mode: "Builder" | "Reader", fields: FieldSpec[]): iolist.I
   return result;
 }
 
+function formatTypeById(mode: "Builder" | "Reader", typ: TypeById): iolist.IoList {
+      let ret: iolist.IoList = ['$', typ.typeId, '.', mode];
+      if('fileId' in typ) {
+        ret = ['$', assertDefined(typ.fileId), '.', ret];
+      }
+      return ret;
+}
+
 function formatTypeRef(mode: "Builder" | "Reader", typ: TypeRef): iolist.IoList {
   if(typ instanceof Object) {
     if('list' in typ) {
@@ -179,12 +212,9 @@ function formatTypeRef(mode: "Builder" | "Reader", typ: TypeRef): iolist.IoList 
     } else if('group' in typ) {
       return formatStructFields(mode, typ.group);
     } else if('struct' in typ) {
-      const struct = typ.struct;
-      let ret: iolist.IoList = ['$', struct.typeId, '.', mode];
-      if('fileId' in struct) {
-        ret = ['$', assertDefined(struct.fileId), '.', ret];
-      }
-      return ret;
+      return formatTypeById(mode, typ.struct);
+    } else if('enum' in typ) {
+      return formatTypeById(mode, typ.enum);
     } else {
       return impossible(typ);
     }
@@ -331,8 +361,23 @@ function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.Node): No
     const commonFields = unionFields[noDiscrim];
     delete unionFields[noDiscrim];
     result.struct = { commonFields, unionFields };
+  } else if('enum' in node) {
+    const enumerants = assertDefined(node.enum.enumerants);
+    result.enum = [];
+    for(let i = 0; i < enumerants.length; i++) {
+      result.enum.push(assertDefined(enumerants[i].name));
+    }
   }
   return result;
+}
+
+function typeById(nodeMap: NodeMap, thisFileId: NodeId, typeId: NodeId): TypeById {
+    const fileId = assertDefined(findNodeFile(typeId, nodeMap).id);
+    if(fileId === thisFileId) {
+      return { typeId }
+    } else {
+      return { typeId, fileId }
+    }
 }
 
 function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.Type): TypeRef {
@@ -363,24 +408,17 @@ function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.Type): Ty
     // TODO: sanity check that node-capnp really treats all anyPointers this way.
     return 'Buffer';
   } else if('struct' in typ) {
-    const typeId = typ.struct.typeId;
-    const fileId = assertDefined(findNodeFile(typeId, nodeMap).id);
-    if(fileId === thisFileId) {
-      return { struct: { typeId } }
-    } else {
-      return { struct: { typeId, fileId } }
-    }
-  }
-  /*
+    return { struct: typeById(nodeMap, thisFileId, typ.struct.typeId) }
   } else if('enum' in typ) {
-    throw new Error("TODO: handle enums.")
+    return { enum: typeById(nodeMap, thisFileId, typ.enum.typeId) }
+  /*
   } else if('interface' in typ) {
     throw new Error("TODO: handle interfaces.")
   } else {
     console.error("Unknown type: ", typ, "; can't make type ref.");
     throw new Error("Unknown type can't make type ref.");
-  }
   */
+  }
   return 'void';
 }
 

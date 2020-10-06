@@ -24,9 +24,15 @@ declare module Schema {
       fields?: Array<Field>;
     }
 
+    export interface Enumerant {
+      name?: string;
+    }
+
     type Choices$
       = { file: File }
-      | { struct: Struct };
+      | { struct: Struct }
+      | { enum: { enumerants: Enumerant[] } }
+      ;
   }
   export type Node = Node$.Common$ & Node$.Choices$;
 
@@ -58,6 +64,7 @@ declare module Schema {
     | { data: null }
     | { list: { elementType: Type } }
     | { struct: { typeId: string } }
+    | { enum: { typeId: string } }
     ;
 
   export module Field$ {
