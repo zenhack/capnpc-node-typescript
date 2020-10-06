@@ -7,18 +7,20 @@ function impossible(n: never): never {
   return n;
 }
 
+type NodeId = string;
+
 type StrDict<T> = { [k: string]: T }
 
 type NodeMap = StrDict<schema.Node>
 
 interface FileOutSpec {
   filename: string;
-  imports: { id: string, name: string }[];
+  imports: { id: NodeId, name: string }[];
   root: NodeOutSpec;
 }
 
 interface NodeOutSpec {
-  id: string;
+  id: NodeId;
   kids: StrDict<NodeOutSpec>;
   struct?: StructOutSpec;
 }
@@ -41,7 +43,7 @@ type TypeRef = (
   | "Buffer"
   | { list: TypeRef }
   | { group: StructOutSpec }
-  | { struct: { typeId: string, fileId?: string } }
+  | { struct: { typeId: NodeId, fileId?: NodeId } }
 );
 
 function assertDefined<T>(arg: T | undefined): T {
@@ -51,7 +53,7 @@ function assertDefined<T>(arg: T | undefined): T {
   return arg;
 }
 
-function findNodeFile(nodeId: string, nodeMap: NodeMap): schema.Node {
+function findNodeFile(nodeId: NodeId, nodeMap: NodeMap): schema.Node {
   // Find the root scope of 'nodeId', which must be a file. Throws
   // if node's root scope is not a file, or if some node in the chain is
   // not in the nodeMap.
@@ -281,7 +283,7 @@ function handleFile(
   return ret;
 }
 
-function handleNode(nodeMap: NodeMap, thisFileId: string, node: schema.Node): NodeOutSpec {
+function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.Node): NodeOutSpec {
   const kids: StrDict<NodeOutSpec> = {};
   for(const nestedNode of node.nestedNodes || []) {
     const kid: schema.Node = nodeMap[assertDefined(nestedNode.id)];
@@ -333,7 +335,7 @@ function handleNode(nodeMap: NodeMap, thisFileId: string, node: schema.Node): No
   return result;
 }
 
-function makeTypeRef(nodeMap: NodeMap, thisFileId: string, typ: schema.Type): TypeRef {
+function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.Type): TypeRef {
   if('void' in typ) {
     return 'void'
   } else if('bool' in typ) {
