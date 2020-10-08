@@ -80,6 +80,13 @@ function findNodeFile(nodeId: NodeId, nodeMap: NodeMap): schema.Node {
   return node;
 }
 
+function formatSchemaType(path: Array<string>): iolist.IoList {
+  const name = path.join('.');
+  return [
+    '$Capnp.StructSchema<types_.', name, '.Reader, types_.', name, '.Builder>',
+  ]
+}
+
 function formatValueTypes(path: Array<string>, spec: NodeOutSpec, struct: StructOutSpec): iolist.IoList {
   const result: iolist.IoList = [];
   const keys = Object.getOwnPropertyNames(spec.kids);
@@ -90,7 +97,7 @@ function formatValueTypes(path: Array<string>, spec: NodeOutSpec, struct: Struct
       continue;
     }
     path.push(k);
-    result.push([k, ': $Capnp.Schema<types_.', path.join('.'), '.Reader> & {\n']);
+    result.push([k, ': ', formatSchemaType(path), ' & {\n']);
     result.push(formatValueTypes(path, kid, struct));
     result.push('\},\n');
     path.pop();
@@ -102,7 +109,7 @@ function formatValues(name: string, path: Array<string>, spec: NodeOutSpec): iol
   const struct = spec.struct;
   if(struct !== undefined) {
     return [
-      ['export const ', name, ': $Capnp.Schema<types_.', path.join('.'), '.Reader> & {\n'],
+      ['export const ', name, ': ', formatSchemaType(path), ' & {\n'],
       formatValueTypes(path, spec, struct),
       '};\n',
     ]

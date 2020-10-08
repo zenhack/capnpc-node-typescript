@@ -2,7 +2,7 @@ import Capnp from 'capnp';
 
 declare module Schema {
 
-  export const CodeGeneratorRequest: Capnp.Schema<CodeGeneratorRequest>;
+  export const CodeGeneratorRequest: Capnp.StructSchema<CodeGeneratorRequest, CodeGeneratorRequest>;
 
   export module Node$ {
     export interface Common$ {
