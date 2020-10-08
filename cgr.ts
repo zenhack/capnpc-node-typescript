@@ -24,7 +24,23 @@ interface NodeOutSpec {
   kids: StrDict<NodeOutSpec>;
   struct?: StructOutSpec;
   enum?: string[];
+  interface?: InterfaceOutSpec;
 }
+
+interface InterfaceOutSpec {
+  superIds: NodeId[];
+  methods: StrDict<MethodOutSpec>;
+}
+
+interface MethodOutSpec {
+  params: ArgsOutSpec;
+  results: ArgsOutSpec;
+}
+
+type ArgsOutSpec =
+  | { declared: TypeRef }
+  | { listed: { name: string, type: TypeRef }[] }
+  ;
 
 interface StructOutSpec {
   commonFields: FieldSpec[];
@@ -46,6 +62,7 @@ type TypeRef = (
   | { group: StructOutSpec }
   | { struct: TypeById }
   | { enum: TypeById }
+  | { interface: TypeById }
 );
 
 interface TypeById {
@@ -124,6 +141,11 @@ function formatTypesById(path: iolist.IoList, spec: NodeOutSpec): iolist.IoList 
       'export type Builder = ', path, '.Builder;\n',
       'export type Reader = ', path, '.Reader;\n',
     ]);
+  } else if('interface' in spec) {
+    ret.push([
+      'export type Client = ', path, '.Client;\n',
+      'export type Server = ', path, '.Server;\n',
+    ]);
   }
   ret.push('}\n');
   for(const k in spec.kids) {
@@ -155,10 +177,20 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
       formatEnumInterface('Builder', enu),
       formatEnumInterface('Reader', enu),
     ]);
+  } else if('interface' in spec) {
+    const iface = assertDefined(spec.interface);
+    result.push([
+      formatInterfaceInterface('Client', iface),
+      formatInterfaceInterface('Server', iface),
+    ]);
   }
   result.push(body);
   result.push('\n}\n');
   return result;
+}
+
+function formatInterfaceInterface(mode: "Client" | "Server", iface: InterfaceOutSpec): iolist.IoList {
+  throw new Error("TODO: formatInterfaceInterface");
 }
 
 function formatEnumInterface(mode: "Builder" | "Reader", enumerants: string[]): iolist.IoList {
@@ -204,7 +236,7 @@ function formatFields(mode: "Builder" | "Reader", fields: FieldSpec[]): iolist.I
   return result;
 }
 
-function formatTypeById(mode: "Builder" | "Reader", typ: TypeById): iolist.IoList {
+function formatTypeById(mode: string, typ: TypeById): iolist.IoList {
       let ret: iolist.IoList = ['$', typ.typeId, '.', mode];
       if('fileId' in typ) {
         ret = ['$', assertDefined(typ.fileId), '.', ret];
@@ -222,6 +254,10 @@ function formatTypeRef(mode: "Builder" | "Reader", typ: TypeRef): iolist.IoList 
       return formatTypeById(mode, typ.struct);
     } else if('enum' in typ) {
       return formatTypeById(mode, typ.enum);
+    } else if('interface' in typ) {
+      const iface = typ.interface;
+      const imode = (mode === "Builder")? "Server" : "Client";
+      return formatTypeById(imode, iface);
     } else {
       return impossible(typ);
     }
@@ -374,6 +410,8 @@ function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.Node): No
     for(let i = 0; i < enumerants.length; i++) {
       result.enum.push(assertDefined(enumerants[i].name));
     }
+  } else if('interface' in node) {
+    throw new Error("TODO: handleNode/interface");
   }
   return result;
 }
