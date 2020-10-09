@@ -9,10 +9,7 @@ capnp/.built: build/.built
 		$(CORE_SCHEMA)/capnp/*.capnp \
 		| ./capnpc-node-typescript.js
 
-build/.built: \
-	$(shell find * -type f -name '*.ts') \
-	schema-bootstrap.d.ts \
-	schema-bootstrap.js
+build/.built: $(shell find * -type f -name '*.ts')
 	npm run build
 
 clean-capnp:

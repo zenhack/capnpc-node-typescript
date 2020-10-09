@@ -1,5 +1,5 @@
 import capnp from 'capnp';
-import schema from './schema-bootstrap.js';
+import schema from './capnp/schema.capnp.js';
 
 import * as iolist from './iolist.js';
 
@@ -11,7 +11,7 @@ type NodeId = string;
 
 type StrDict<T> = { [k: string]: T }
 
-type NodeMap = StrDict<schema.Node>
+type NodeMap = StrDict<schema.types_.Node.Reader>
 
 interface FileOutSpec {
   filename: string;
@@ -77,7 +77,7 @@ function assertDefined<T>(arg: T | undefined): T {
   return arg;
 }
 
-function findNodeFile(nodeId: NodeId, nodeMap: NodeMap): schema.Node {
+function findNodeFile(nodeId: NodeId, nodeMap: NodeMap): schema.types_.Node.Reader {
   // Find the root scope of 'nodeId', which must be a file. Throws
   // if node's root scope is not a file, or if some node in the chain is
   // not in the nodeMap.
@@ -366,7 +366,7 @@ function formatCgr(cgr: CgrOutSpec): StrDict<iolist.IoList> {
   return result
 }
 
-function handleCgr(cgr: schema.CodeGeneratorRequest): CgrOutSpec {
+function handleCgr(cgr: schema.types_.CodeGeneratorRequest.Reader): CgrOutSpec {
   const nodeMap: NodeMap = {};
   for(const node of assertDefined(cgr.nodes)) {
     nodeMap[assertDefined(node.id)] = node;
@@ -382,7 +382,7 @@ function handleCgr(cgr: schema.CodeGeneratorRequest): CgrOutSpec {
 
 function handleFile(
   nodeMap: NodeMap,
-  requestedFile: schema.CodeGeneratorRequest.RequestedFile,
+  requestedFile: schema.types_.CodeGeneratorRequest.RequestedFile.Reader,
 ): FileOutSpec {
   const fileId = assertDefined(requestedFile.id);
   const fileNode = nodeMap[fileId];
@@ -401,7 +401,7 @@ function handleFile(
   return ret;
 }
 
-function handleField(nodeMap: NodeMap, thisFileId: NodeId, field: schema.Field): FieldSpec {
+function handleField(nodeMap: NodeMap, thisFileId: NodeId, field: schema.types_.Field.Reader): FieldSpec {
   if('slot' in field) {
     return {
       name: assertDefined(field.name),
@@ -424,10 +424,10 @@ function handleField(nodeMap: NodeMap, thisFileId: NodeId, field: schema.Field):
   }
 }
 
-function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.Node): NodeOutSpec {
+function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.types_.Node.Reader): NodeOutSpec {
   const kids: StrDict<NodeOutSpec> = {};
   for(const nestedNode of node.nestedNodes || []) {
-    const kid: schema.Node = nodeMap[assertDefined(nestedNode.id)];
+    const kid: schema.types_.Node.Reader = nodeMap[assertDefined(nestedNode.id)];
     kids[assertDefined(nestedNode.name)] = handleNode(nodeMap, thisFileId, kid);
   }
   const result: NodeOutSpec = {
@@ -435,7 +435,9 @@ function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.Node): No
     kids: assertDefined(kids),
   }
 
-  const noDiscrim = schema.Field.noDiscriminant;
+  // TODO: generate constants, then uncomment this.
+  //const noDiscrim = schema.Field.noDiscriminant;
+  const noDiscrim = 0xffff;
 
   if('struct' in node) {
     const unionFields: StrDict<FieldSpec[]> = {};
@@ -509,7 +511,7 @@ function typeById(nodeMap: NodeMap, thisFileId: NodeId, typeId: NodeId): TypeByI
     }
 }
 
-function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.Type): TypeRef {
+function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.types_.Type.Reader): TypeRef {
   if('void' in typ) {
     return 'void'
   } else if('bool' in typ) {
@@ -551,6 +553,6 @@ function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.Type): Ty
   return 'void';
 }
 
-export function cgrToFileContents(cgr: schema.CodeGeneratorRequest): StrDict<iolist.IoList> {
+export function cgrToFileContents(cgr: schema.types_.CodeGeneratorRequest.Reader): StrDict<iolist.IoList> {
   return formatCgr(handleCgr(cgr));
 }
