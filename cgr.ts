@@ -196,7 +196,7 @@ function formatInterfaceInterface(mode: "Client" | "Server", iface: InterfaceOut
   }
   ret.push('{\n')
   for(const name in iface.methods) {
-    formatMethod(mode, name, iface.methods[name])
+    ret.push(formatMethod(mode, name, iface.methods[name]))
   }
   ret.push('}\n')
   return ret
@@ -216,11 +216,10 @@ function formatMethod(mode: "Client" | "Server", name: string, method: MethodOut
   }
   ret.push(") => ");
   const resultMode = (mode === "Client")? "Reader" : "Builder";
-  let resultType: iolist.IoList = [];
   if('declared' in method.results) {
-    resultType = formatTypeRef(resultMode, method.results.declared);
+    ret.push(formatTypeRef(resultMode, method.results.declared));
   } else {
-    resultType.push(['{', formatArgList(resultMode, method.results.listed), '}']);
+    ret.push(['{', formatArgList(resultMode, method.results.listed), '}']);
   }
   ret.push(",\n");
   return ret
