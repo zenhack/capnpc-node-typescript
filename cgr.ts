@@ -28,7 +28,7 @@ interface NodeOutSpec {
 }
 
 interface InterfaceOutSpec {
-  superIds: NodeId[];
+  superIds: TypeById[];
   methods: StrDict<MethodOutSpec>;
 }
 
@@ -39,7 +39,7 @@ interface MethodOutSpec {
 
 type ArgsOutSpec =
   | { declared: TypeRef }
-  | { listed: { name: string, type: TypeRef }[] }
+  | { listed: FieldSpec[] }
   ;
 
 interface StructOutSpec {
@@ -190,7 +190,52 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
 }
 
 function formatInterfaceInterface(mode: "Client" | "Server", iface: InterfaceOutSpec): iolist.IoList {
-  throw new Error("TODO: formatInterfaceInterface");
+  const ret: iolist.IoList = ['type ', mode, ' = ']
+  for(let i = 0; i < iface.superIds.length; i++) {
+    ret.push([formatTypeById(mode, iface.superIds[i]), ' & '])
+  }
+  ret.push('{\n')
+  for(const name in iface.methods) {
+    formatMethod(mode, name, iface.methods[name])
+  }
+  ret.push('}\n')
+  return ret
+}
+
+function formatMethod(mode: "Client" | "Server", name: string, method: MethodOutSpec) {
+  const ret: iolist.IoList[] = [name];
+  if(mode === "Server") {
+    ret.push("?")
+  }
+  ret.push(":(");
+  const argMode = (mode === "Server")? "Reader" : "Builder";
+  if('declared' in method.params) {
+    ret.push(["param: ", formatTypeRef(argMode, method.params.declared)]);
+  } else {
+    ret.push(formatArgList(argMode, method.params.listed));
+  }
+  ret.push(") => ");
+  const resultMode = (mode === "Client")? "Reader" : "Builder";
+  let resultType: iolist.IoList = [];
+  if('declared' in method.results) {
+    resultType = formatTypeRef(resultMode, method.results.declared);
+  } else {
+    resultType.push(['{', formatArgList(resultMode, method.results.listed), '}']);
+  }
+  ret.push(",\n");
+  return ret
+}
+
+function formatArgList(mode: "Builder" | "Reader", args: FieldSpec[]): iolist.IoList {
+  const ret = []
+  for(let i = 0; i < args.length; i++) {
+    if(i !== 0) {
+      ret.push(', ')
+    }
+    const {name, type} = args[i];
+    ret.push([name, ': ', formatTypeRef(mode, type)]);
+  }
+  return ret;
 }
 
 function formatEnumInterface(mode: "Builder" | "Reader", enumerants: string[]): iolist.IoList {
@@ -356,6 +401,29 @@ function handleFile(
   return ret;
 }
 
+function handleField(nodeMap: NodeMap, thisFileId: NodeId, field: schema.Field): FieldSpec {
+  if('slot' in field) {
+    return {
+      name: assertDefined(field.name),
+      type: makeTypeRef(nodeMap, thisFileId, assertDefined(field.slot.type)),
+    };
+  } else if('group' in field) {
+    const groupId = assertDefined(field.group.typeId);
+    const groupNode = assertDefined(nodeMap[groupId]);
+    const groupSpec = handleNode(nodeMap, thisFileId, groupNode);
+    const groupStruct = groupSpec.struct;
+    if(groupStruct === undefined) {
+      throw new Error("Group field " + field.toString() + " is not a struct.");
+    }
+    return {
+      name: assertDefined(field.name),
+      type: { group: groupStruct },
+    };
+  } else {
+    throw new Error("Unsupported field type (neither slot nor group)");
+  }
+}
+
 function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.Node): NodeOutSpec {
   const kids: StrDict<NodeOutSpec> = {};
   for(const nestedNode of node.nestedNodes || []) {
@@ -379,26 +447,7 @@ function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.Node): No
           unionFields[tag] = [];
         }
         const fields = assertDefined(unionFields[tag]);
-        if('slot' in field) {
-          fields.push({
-            name: assertDefined(field.name),
-            type: makeTypeRef(nodeMap, thisFileId, assertDefined(field.slot.type)),
-          });
-        } else if('group' in field) {
-          const groupId = assertDefined(field.group.typeId);
-          const groupNode = assertDefined(nodeMap[groupId]);
-          const groupSpec = handleNode(nodeMap, thisFileId, groupNode);
-          const groupStruct = groupSpec.struct;
-          if(groupStruct === undefined) {
-            throw new Error("Group field " + field.toString() + " is not a struct.");
-          }
-          fields.push({
-            name: assertDefined(field.name),
-            type: { group: groupStruct },
-          });
-        } else {
-          throw new Error("Unsupported field type (neither slot nor group)");
-        }
+        fields.push(handleField(nodeMap, thisFileId, field))
       }
     }
     const commonFields = unionFields[noDiscrim];
@@ -411,9 +460,44 @@ function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.Node): No
       result.enum.push(assertDefined(enumerants[i].name));
     }
   } else if('interface' in node) {
-    throw new Error("TODO: handleNode/interface");
+    const iface = node.interface;
+    const supers = assertDefined(iface.superclasses);
+    const methods = assertDefined(iface.methods);
+    const spec: InterfaceOutSpec = {
+      superIds: [],
+      methods: {}
+    }
+    for(let i = 0; i < supers.length; i++) {
+      spec.superIds.push(typeById(nodeMap, thisFileId, assertDefined(supers[i].id)));
+    }
+    for(let i = 0; i < methods.length; i++) {
+      const method = assertDefined(methods[i]);
+      spec.methods[assertDefined(method.name)] = {
+        params: handleParamResult(nodeMap, thisFileId, method.paramStructType),
+        results: handleParamResult(nodeMap, thisFileId, method.resultStructType),
+      };
+    }
+    result.interface = spec;
   }
   return result;
+}
+
+function handleParamResult(nodeMap: NodeMap, thisFileId: NodeId, structId: NodeId): ArgsOutSpec {
+  const node = assertDefined(nodeMap[structId]);
+  const fields = [];
+  if(node.scopeId === '0') {
+    if(!('struct' in node)) {
+      throw new Error('parameter or result type was not a struct');
+    }
+    const fields = assertDefined(node.struct.fields);
+    const listed = [];
+    for(let i = 0; i < fields.length; i++) {
+      listed.push(handleField(nodeMap, thisFileId, fields[i]));
+    }
+    return { listed }
+  } else {
+    return { declared: { struct: typeById(nodeMap, thisFileId, structId) } }
+  }
 }
 
 function typeById(nodeMap: NodeMap, thisFileId: NodeId, typeId: NodeId): TypeById {
@@ -456,9 +540,9 @@ function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.Type): Ty
     return { struct: typeById(nodeMap, thisFileId, typ.struct.typeId) }
   } else if('enum' in typ) {
     return { enum: typeById(nodeMap, thisFileId, typ.enum.typeId) }
-  /*
   } else if('interface' in typ) {
-    throw new Error("TODO: handle interfaces.")
+    return { interface: typeById(nodeMap, thisFileId, typ.interface.typeId) }
+  /*
   } else {
     console.error("Unknown type: ", typ, "; can't make type ref.");
     throw new Error("Unknown type can't make type ref.");
@@ -467,6 +551,6 @@ function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.Type): Ty
   return 'void';
 }
 
-export function cgrToFileContents(cgr: schema.CodeGeneratorRequest): StrDict<iolist.IoList>  {
+export function cgrToFileContents(cgr: schema.CodeGeneratorRequest): StrDict<iolist.IoList> {
   return formatCgr(handleCgr(cgr));
 }

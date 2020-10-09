@@ -32,6 +32,7 @@ declare module Schema {
       = { file: File }
       | { struct: Struct }
       | { enum: { enumerants: Enumerant[] } }
+      | { interface: { methods: Method[], superclasses: Superclass[] } }
       ;
   }
   export type Node = Node$.Common$ & Node$.Choices$;
@@ -45,6 +46,16 @@ declare module Schema {
     export interface Parameter {
       name?: string;
     }
+  }
+
+  export interface Method {
+    name: string;
+    paramStructType: string;
+    resultStructType: string;
+  }
+
+  export interface Superclass {
+    id: string;
   }
 
   export type Type
@@ -65,6 +76,7 @@ declare module Schema {
     | { list: { elementType: Type } }
     | { struct: { typeId: string } }
     | { enum: { typeId: string } }
+    | { interface: { typeId: string } }
     ;
 
   export module Field$ {
