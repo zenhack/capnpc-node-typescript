@@ -77,6 +77,14 @@ function assertDefined<T>(arg: T | undefined): T {
   return arg;
 }
 
+function definedOr<T>(arg: T | undefined, def: T): T {
+  if(arg === undefined) {
+    return def
+  } else {
+    return arg
+  }
+}
+
 function findNodeFile(nodeId: NodeId, nodeMap: NodeMap): schema.types_.Node.Reader {
   // Find the root scope of 'nodeId', which must be a file. Throws
   // if node's root scope is not a file, or if some node in the chain is
@@ -490,7 +498,7 @@ function handleParamResult(nodeMap: NodeMap, thisFileId: NodeId, structId: NodeI
     if(!('struct' in node)) {
       throw new Error('parameter or result type was not a struct');
     }
-    const fields = assertDefined(node.struct.fields);
+    const fields = definedOr(node.struct.fields, []);
     const listed = [];
     for(let i = 0; i < fields.length; i++) {
       listed.push(handleField(nodeMap, thisFileId, fields[i]));
