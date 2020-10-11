@@ -4,10 +4,10 @@ declare module $tmp {
 export module types_ {
 export module Persistent{
 type Client = {
-save:(param: $17829674341603767205.Builder) => $13215893102637674431.Reader,
+save:(param: $17829674341603767205.Builder) => Promise<$13215893102637674431.Reader>,
 }
 type Server = {
-save?:(param: $17829674341603767205.Reader) => $13215893102637674431.Builder,
+save?:(param: $17829674341603767205.Reader) => Promise<$13215893102637674431.Builder> | $13215893102637674431.Builder,
 }
 export module SaveParams{
 type Builder = { sealFor?: Buffer;
@@ -39,12 +39,12 @@ export type Reader = types_.Persistent.SaveResults.Reader;
 }
 export module RealmGateway{
 type Client = {
-import:(cap: $14468694717054801553.Server, params: $17829674341603767205.Builder) => $13215893102637674431.Reader,
-export:(cap: $14468694717054801553.Server, params: $17829674341603767205.Builder) => $13215893102637674431.Reader,
+import:(cap: $14468694717054801553.Server, params: $17829674341603767205.Builder) => Promise<$13215893102637674431.Reader>,
+export:(cap: $14468694717054801553.Server, params: $17829674341603767205.Builder) => Promise<$13215893102637674431.Reader>,
 }
 type Server = {
-import?:(cap: $14468694717054801553.Client, params: $17829674341603767205.Reader) => $13215893102637674431.Builder,
-export?:(cap: $14468694717054801553.Client, params: $17829674341603767205.Reader) => $13215893102637674431.Builder,
+import?:(cap: $14468694717054801553.Client, params: $17829674341603767205.Reader) => Promise<$13215893102637674431.Builder> | $13215893102637674431.Builder,
+export?:(cap: $14468694717054801553.Client, params: $17829674341603767205.Reader) => Promise<$13215893102637674431.Builder> | $13215893102637674431.Builder,
 }
 
 }

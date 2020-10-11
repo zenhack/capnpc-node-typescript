@@ -224,12 +224,18 @@ function formatMethod(mode: "Client" | "Server", name: string, method: MethodOut
   }
   ret.push(") => ");
   const resultMode = (mode === "Client")? "Reader" : "Builder";
+  let result: iolist.IoList = [];
   if('declared' in method.results) {
-    ret.push(formatTypeRef(resultMode, method.results.declared));
+    result.push(formatTypeRef(resultMode, method.results.declared));
   } else {
-    ret.push(['{', formatArgList(resultMode, method.results.listed), '}']);
+    result.push(['{', formatArgList(resultMode, method.results.listed), '}']);
   }
-  ret.push(",\n");
+  if(mode === "Client") {
+    result = ["Promise<", result, ">"];
+  } else {
+    result = ["Promise<", result, "> | ", result];
+  }
+  ret.push([result, ",\n"]);
   return ret
 }
 
