@@ -557,13 +557,10 @@ function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.types_.Ty
     return { enum: typeById(nodeMap, thisFileId, typ.enum.typeId) }
   } else if('interface' in typ) {
     return { interface: typeById(nodeMap, thisFileId, typ.interface.typeId) }
-  /*
   } else {
     console.error("Unknown type: ", typ, "; can't make type ref.");
     throw new Error("Unknown type can't make type ref.");
-  */
   }
-  return 'void';
 }
 
 export function cgrToFileContents(cgr: schema.types_.CodeGeneratorRequest.Reader): StrDict<iolist.IoList> {
