@@ -58,6 +58,7 @@ type TypeRef = (
   | "number"
   | "string"
   | "Buffer"
+  | "Capability"
   | { list: TypeRef }
   | { group: StructOutSpec }
   | { struct: TypeById }
@@ -319,8 +320,14 @@ function formatTypeRef(mode: "Builder" | "Reader", typ: TypeRef): iolist.IoList 
     } else {
       return impossible(typ);
     }
+  } else if(typ === "Capability") {
+    if(mode === "Builder") {
+      return "$Capnp.AnyServer";
+    } else {
+      return "$Capnp.AnyClient";
+    }
   } else {
-    // some kind of string constant.
+    // some other kind of string constant.
     return typ
   }
 }
@@ -549,8 +556,21 @@ function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.types_.Ty
   } else if('list' in typ) {
     return { list: makeTypeRef(nodeMap, thisFileId, typ.list.elementType) }
   } else if('anyPointer' in typ) {
-    // TODO: sanity check that node-capnp really treats all anyPointers this way.
-    return 'Buffer';
+    const ptrType = typ.anyPointer;
+    if('unconstrained' in ptrType) {
+      const p = ptrType.unconstrained;
+      if('capability' in p) {
+        return "Capability";
+      } else {
+        return 'Buffer';
+      }
+    } else if('parameter' in ptrType) {
+      // Treat as a regular anypointer for now; TODO: generics.
+      return 'Buffer';
+    } else {
+      console.log("Unknown anyPointer variant: ", typ)
+      throw new Error("Unknown anyPointer variant");
+    }
   } else if('struct' in typ) {
     return { struct: typeById(nodeMap, thisFileId, typ.struct.typeId) }
   } else if('enum' in typ) {
