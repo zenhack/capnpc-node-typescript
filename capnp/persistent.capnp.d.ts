@@ -3,10 +3,10 @@ import * as $13688829037717245569 from "capnp/c++.capnp.js";
 declare module $tmp {
 export module types_ {
 export module Persistent{
-type Client = {
+type Client = $Capnp.AnyClient & {
 save:(param: $17829674341603767205.Builder) => Promise<$13215893102637674431.Reader>,
 }
-type Server = {
+type Server = $Capnp.AnyServer & {
 save?:(param: $17829674341603767205.Reader) => Promise<$13215893102637674431.Builder> | $13215893102637674431.Builder,
 }
 export module SaveParams{
@@ -38,11 +38,11 @@ export type Builder = types_.Persistent.SaveResults.Builder;
 export type Reader = types_.Persistent.SaveResults.Reader;
 }
 export module RealmGateway{
-type Client = {
+type Client = $Capnp.AnyClient & {
 import:(cap: $14468694717054801553.Server, params: $17829674341603767205.Builder) => Promise<$13215893102637674431.Reader>,
 export:(cap: $14468694717054801553.Server, params: $17829674341603767205.Builder) => Promise<$13215893102637674431.Reader>,
 }
-type Server = {
+type Server = $Capnp.AnyServer & {
 import?:(cap: $14468694717054801553.Client, params: $17829674341603767205.Reader) => Promise<$13215893102637674431.Builder> | $13215893102637674431.Builder,
 export?:(cap: $14468694717054801553.Client, params: $17829674341603767205.Reader) => Promise<$13215893102637674431.Builder> | $13215893102637674431.Builder,
 }

@@ -198,11 +198,11 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
 }
 
 function formatInterfaceInterface(mode: "Client" | "Server", iface: InterfaceOutSpec): iolist.IoList {
-  const ret: iolist.IoList = ['type ', mode, ' = ']
+  const ret: iolist.IoList = ['type ', mode, ' = $Capnp.Any', mode]
   for(let i = 0; i < iface.superIds.length; i++) {
-    ret.push([formatTypeById(mode, iface.superIds[i]), ' & '])
+    ret.push([' & ', formatTypeById(mode, iface.superIds[i])])
   }
-  ret.push('{\n')
+  ret.push(' & {\n')
   for(const name in iface.methods) {
     ret.push(formatMethod(mode, name, iface.methods[name]))
   }
