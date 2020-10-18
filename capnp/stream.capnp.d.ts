@@ -1,5 +1,5 @@
 import $Capnp from "capnp";
-import * as $13688829037717245569 from "capnp/c++.capnp.js";
+import $13688829037717245569 from "capnp/c++.capnp.js";
 declare module $tmp {
 export module types_ {
 export module StreamResult{

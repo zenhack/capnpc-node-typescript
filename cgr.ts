@@ -298,7 +298,7 @@ function formatFields(mode: "Builder" | "Reader", fields: FieldSpec[]): iolist.I
 function formatTypeById(mode: string, typ: TypeById): iolist.IoList {
       let ret: iolist.IoList = ['$', typ.typeId, '.', mode];
       if('fileId' in typ) {
-        ret = ['$', assertDefined(typ.fileId), '.', ret];
+        ret = ['$', assertDefined(typ.fileId), '.types_.', ret];
       }
       return ret;
 }
@@ -346,11 +346,16 @@ function formatDeclFile(spec: FileOutSpec): iolist.IoList {
   const imports: iolist.IoList = [];
   for(const imp of spec.imports) {
     let importName = imp.name;
-    while(importName.startsWith('/')) {
+
+    // JS conventions for relative vs. absolute paths are inverted vs. capnp:
+    if(importName.startsWith('/')) {
       importName = importName.slice(1);
+    } else {
+      importName = './' + importName;
     }
+
     const path = JSON.stringify(importName + ".js");
-    imports.push(['import * as $', imp.id, ' from ', path, ';\n']);
+    imports.push(['import $', imp.id, ' from ', path, ';\n']);
   }
   return [
     'import $Capnp from "capnp";\n',
