@@ -25,6 +25,7 @@ interface NodeOutSpec {
   struct?: StructOutSpec;
   enum?: string[];
   interface?: InterfaceOutSpec;
+  typeParams: string[];
 }
 
 interface InterfaceOutSpec {
@@ -69,6 +70,13 @@ type TypeRef = (
 interface TypeById {
   typeId: NodeId;
   fileId?: NodeId;
+}
+
+
+interface SpecBuilderCtx {
+  nodeMap: NodeMap;
+  thisFileId: NodeId;
+  typeParams: string[];
 }
 
 function assertDefined<T>(arg: T | undefined): T {
@@ -411,7 +419,12 @@ function handleFile(
 ): FileOutSpec {
   const fileId = assertDefined(requestedFile.id);
   const fileNode = nodeMap[fileId];
-  const ns = handleNode(nodeMap, fileId, fileNode);
+  const ctx = {
+    nodeMap,
+    thisFileId: fileId,
+    typeParams: [],
+  }
+  const ns = handleNode(ctx, fileNode);
   const ret: FileOutSpec = {
     filename: assertDefined(requestedFile.filename),
     imports: [],
@@ -426,16 +439,16 @@ function handleFile(
   return ret;
 }
 
-function handleField(nodeMap: NodeMap, thisFileId: NodeId, field: schema.types_.Field.Reader): FieldSpec {
+function handleField(ctx: SpecBuilderCtx, field: schema.types_.Field.Reader): FieldSpec {
   if('slot' in field) {
     return {
       name: assertDefined(field.name),
-      type: makeTypeRef(nodeMap, thisFileId, assertDefined(field.slot.type)),
+      type: makeTypeRef(ctx, assertDefined(field.slot.type)),
     };
   } else if('group' in field) {
     const groupId = assertDefined(field.group.typeId);
-    const groupNode = assertDefined(nodeMap[groupId]);
-    const groupSpec = handleNode(nodeMap, thisFileId, groupNode);
+    const groupNode = assertDefined(ctx.nodeMap[groupId]);
+    const groupSpec = handleNode(ctx, groupNode);
     const groupStruct = groupSpec.struct;
     if(groupStruct === undefined) {
       throw new Error("Group field " + field.toString() + " is not a struct.");
@@ -449,15 +462,32 @@ function handleField(nodeMap: NodeMap, thisFileId: NodeId, field: schema.types_.
   }
 }
 
-function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.types_.Node.Reader): NodeOutSpec {
+function addNodeTypeParams(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): SpecBuilderCtx {
+  if(!('parameters' in node)) {
+    return ctx;
+  }
+  const newParams = [];
+  for(let i = 0; i < node.parameters.length; i++) {
+    newParams.push(node.parameters[i].name);
+  }
+  if(newParams.length > 0) {
+    return { ...ctx, typeParams: ctx.typeParams.concat(newParams) }
+  } else {
+    return ctx
+  }
+}
+
+function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeOutSpec {
   const kids: StrDict<NodeOutSpec> = {};
+  ctx = addNodeTypeParams(ctx, node);
   for(const nestedNode of node.nestedNodes || []) {
-    const kid: schema.types_.Node.Reader = nodeMap[assertDefined(nestedNode.id)];
-    kids[assertDefined(nestedNode.name)] = handleNode(nodeMap, thisFileId, kid);
+    const kid: schema.types_.Node.Reader = ctx.nodeMap[assertDefined(nestedNode.id)];
+    kids[assertDefined(nestedNode.name)] = handleNode(ctx, kid);
   }
   const result: NodeOutSpec = {
     id: assertDefined(node.id),
     kids: assertDefined(kids),
+    typeParams: ctx.typeParams,
   }
 
   // TODO: generate constants, then uncomment this.
@@ -474,7 +504,7 @@ function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.types_.No
           unionFields[tag] = [];
         }
         const fields = assertDefined(unionFields[tag]);
-        fields.push(handleField(nodeMap, thisFileId, field))
+        fields.push(handleField(ctx, field))
       }
     }
     const commonFields = unionFields[noDiscrim];
@@ -495,13 +525,13 @@ function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.types_.No
       methods: {}
     }
     for(let i = 0; i < supers.length; i++) {
-      spec.superIds.push(typeById(nodeMap, thisFileId, assertDefined(supers[i].id)));
+      spec.superIds.push(typeById(ctx, assertDefined(supers[i].id)));
     }
     for(let i = 0; i < methods.length; i++) {
       const method = assertDefined(methods[i]);
       spec.methods[assertDefined(method.name)] = {
-        params: handleParamResult(nodeMap, thisFileId, method.paramStructType),
-        results: handleParamResult(nodeMap, thisFileId, method.resultStructType),
+        params: handleParamResult(ctx, method.paramStructType),
+        results: handleParamResult(ctx, method.resultStructType),
       };
     }
     result.interface = spec;
@@ -509,8 +539,8 @@ function handleNode(nodeMap: NodeMap, thisFileId: NodeId, node: schema.types_.No
   return result;
 }
 
-function handleParamResult(nodeMap: NodeMap, thisFileId: NodeId, structId: NodeId): ArgsOutSpec {
-  const node = assertDefined(nodeMap[structId]);
+function handleParamResult(ctx: SpecBuilderCtx, structId: NodeId): ArgsOutSpec {
+  const node = assertDefined(ctx.nodeMap[structId]);
   const fields = [];
   if(node.scopeId === '0') {
     if(!('struct' in node)) {
@@ -519,24 +549,24 @@ function handleParamResult(nodeMap: NodeMap, thisFileId: NodeId, structId: NodeI
     const fields = definedOr(node.struct.fields, []);
     const listed = [];
     for(let i = 0; i < fields.length; i++) {
-      listed.push(handleField(nodeMap, thisFileId, fields[i]));
+      listed.push(handleField(ctx, fields[i]));
     }
     return { listed }
   } else {
-    return { declared: { struct: typeById(nodeMap, thisFileId, structId) } }
+    return { declared: { struct: typeById(ctx, structId) } }
   }
 }
 
-function typeById(nodeMap: NodeMap, thisFileId: NodeId, typeId: NodeId): TypeById {
-    const fileId = assertDefined(findNodeFile(typeId, nodeMap).id);
-    if(fileId === thisFileId) {
+function typeById(ctx: SpecBuilderCtx, typeId: NodeId): TypeById {
+    const fileId = assertDefined(findNodeFile(typeId, ctx.nodeMap).id);
+    if(fileId === ctx.thisFileId) {
       return { typeId }
     } else {
       return { typeId, fileId }
     }
 }
 
-function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.types_.Type.Reader): TypeRef {
+function makeTypeRef(ctx: SpecBuilderCtx, typ: schema.types_.Type.Reader): TypeRef {
   if('void' in typ) {
     return 'void'
   } else if('bool' in typ) {
@@ -559,7 +589,7 @@ function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.types_.Ty
   } else if('data' in typ) {
     return 'Buffer';
   } else if('list' in typ) {
-    return { list: makeTypeRef(nodeMap, thisFileId, typ.list.elementType) }
+    return { list: makeTypeRef(ctx, typ.list.elementType) }
   } else if('anyPointer' in typ) {
     const ptrType = typ.anyPointer;
     if('unconstrained' in ptrType) {
@@ -577,11 +607,11 @@ function makeTypeRef(nodeMap: NodeMap, thisFileId: NodeId, typ: schema.types_.Ty
       throw new Error("Unknown anyPointer variant");
     }
   } else if('struct' in typ) {
-    return { struct: typeById(nodeMap, thisFileId, typ.struct.typeId) }
+    return { struct: typeById(ctx, typ.struct.typeId) }
   } else if('enum' in typ) {
-    return { enum: typeById(nodeMap, thisFileId, typ.enum.typeId) }
+    return { enum: typeById(ctx, typ.enum.typeId) }
   } else if('interface' in typ) {
-    return { interface: typeById(nodeMap, thisFileId, typ.interface.typeId) }
+    return { interface: typeById(ctx, typ.interface.typeId) }
   } else {
     console.error("Unknown type: ", typ, "; can't make type ref.");
     throw new Error("Unknown type can't make type ref.");
