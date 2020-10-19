@@ -295,12 +295,33 @@ function formatFields(mode: "Builder" | "Reader", fields: FieldSpec[]): iolist.I
   const result = [];
   for(const field of fields) {
     result.push(field.name);
-    if(mode === 'Builder') {
+    if(mode === 'Builder' || isPointerType(field.type)) {
       result.push('?');
     }
     result.push([': ', formatTypeRef(mode, field.type), ";\n"]);
   }
   return result;
+}
+
+function isPointerType(typ: TypeRef): boolean {
+  if(typeof(typ) === 'object') {
+    return ('list' in typ) ||
+      ('struct' in typ) ||
+      ('interface' in typ)
+  } else {
+    switch(typ) {
+    case "Capability":
+    case "Buffer":
+        return true;
+    case "void":
+    case "boolean":
+    case "number":
+    case "string":
+        return false;
+    default:
+        return impossible(typ);
+    }
+  }
 }
 
 function formatTypeById(mode: string, typ: TypeById): iolist.IoList {
@@ -466,9 +487,10 @@ function addNodeTypeParams(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader)
   if(!('parameters' in node)) {
     return ctx;
   }
+  const params = assertDefined(node.parameters);
   const newParams = [];
-  for(let i = 0; i < node.parameters.length; i++) {
-    newParams.push(node.parameters[i].name);
+  for(let i = 0; i < params.length; i++) {
+    newParams.push(params[i].name);
   }
   if(newParams.length > 0) {
     return { ...ctx, typeParams: ctx.typeParams.concat(newParams) }
@@ -589,7 +611,7 @@ function makeTypeRef(ctx: SpecBuilderCtx, typ: schema.types_.Type.Reader): TypeR
   } else if('data' in typ) {
     return 'Buffer';
   } else if('list' in typ) {
-    return { list: makeTypeRef(ctx, typ.list.elementType) }
+    return { list: makeTypeRef(ctx, assertDefined(typ.list.elementType)) }
   } else if('anyPointer' in typ) {
     const ptrType = typ.anyPointer;
     if('unconstrained' in ptrType) {

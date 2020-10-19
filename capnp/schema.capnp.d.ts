@@ -47,9 +47,9 @@ type Reader = { id: string;
 displayName: string;
 displayNamePrefixLength: string;
 scopeId: string;
-nestedNodes: $16050641862814319170.Reader[];
-annotations: $17422339044421236034.Reader[];
-parameters: $13353766412138554289.Reader[];
+nestedNodes?: $16050641862814319170.Reader[];
+annotations?: $17422339044421236034.Reader[];
+parameters?: $13353766412138554289.Reader[];
 isGeneric: boolean;
  } & ({ file: void;
  } | {struct: { dataWordCount: number;
@@ -58,17 +58,17 @@ preferredListEncoding: $15102134695616452902.Reader;
 isGroup: boolean;
 discriminantCount: number;
 discriminantOffset: string;
-fields: $11145653318641710175.Reader[];
+fields?: $11145653318641710175.Reader[];
  };
-} | {enum: { enumerants: $10919677598968879693.Reader[];
+} | {enum: { enumerants?: $10919677598968879693.Reader[];
  };
-} | {interface: { methods: $10736806783679155584.Reader[];
-superclasses: $12220001500510083064.Reader[];
+} | {interface: { methods?: $10736806783679155584.Reader[];
+superclasses?: $12220001500510083064.Reader[];
  };
-} | {const: { type: $15020482145304562784.Reader;
-value: $14853958794117909659.Reader;
+} | {const: { type?: $15020482145304562784.Reader;
+value?: $14853958794117909659.Reader;
  };
-} | {annotation: { type: $15020482145304562784.Reader;
+} | {annotation: { type?: $15020482145304562784.Reader;
 targetsFile: boolean;
 targetsConst: boolean;
 targetsEnum: boolean;
@@ -106,7 +106,7 @@ members?: $14031686161526562722.Builder[];
  }
 type Reader = { id: string;
 docComment: string;
-members: $14031686161526562722.Reader[];
+members?: $14031686161526562722.Reader[];
  }
 export module Member{
 type Builder = { docComment?: string;
@@ -157,14 +157,14 @@ hadExplicitDefault?: boolean;
 } | {})
 type Reader = { name: string;
 codeOrder: number;
-annotations: $17422339044421236034.Reader[];
+annotations?: $17422339044421236034.Reader[];
 discriminantValue: number;
 ordinal: {  } & ({ implicit: void;
  } | {explicit: number;
 } | {});
  } & ({ slot: { offset: string;
-type: $15020482145304562784.Reader;
-defaultValue: $14853958794117909659.Reader;
+type?: $15020482145304562784.Reader;
+defaultValue?: $14853958794117909659.Reader;
 hadExplicitDefault: boolean;
  };
  } | {group: { typeId: string;
@@ -188,7 +188,7 @@ annotations?: $17422339044421236034.Builder[];
  }
 type Reader = { name: string;
 codeOrder: number;
-annotations: $17422339044421236034.Reader[];
+annotations?: $17422339044421236034.Reader[];
  }
 
 }
@@ -201,7 +201,7 @@ type Builder = { id?: string;
 brand?: $10391024731148337707.Builder;
  }
 type Reader = { id: string;
-brand: $10391024731148337707.Reader;
+brand?: $10391024731148337707.Reader;
  }
 
 }
@@ -223,10 +223,10 @@ type Reader = { name: string;
 codeOrder: number;
 paramStructType: string;
 resultStructType: string;
-annotations: $17422339044421236034.Reader[];
-paramBrand: $10391024731148337707.Reader;
-resultBrand: $10391024731148337707.Reader;
-implicitParameters: $13353766412138554289.Reader[];
+annotations?: $17422339044421236034.Reader[];
+paramBrand?: $10391024731148337707.Reader;
+resultBrand?: $10391024731148337707.Reader;
+implicitParameters?: $13353766412138554289.Reader[];
  }
 
 }
@@ -286,16 +286,16 @@ type Reader = {  } & ({ void: void;
 } | {float64: void;
 } | {text: void;
 } | {data: void;
-} | {list: { elementType: $15020482145304562784.Reader;
+} | {list: { elementType?: $15020482145304562784.Reader;
  };
 } | {enum: { typeId: string;
-brand: $10391024731148337707.Reader;
+brand?: $10391024731148337707.Reader;
  };
 } | {struct: { typeId: string;
-brand: $10391024731148337707.Reader;
+brand?: $10391024731148337707.Reader;
  };
 } | {interface: { typeId: string;
-brand: $10391024731148337707.Reader;
+brand?: $10391024731148337707.Reader;
  };
 } | {anyPointer: {  } & ({ unconstrained: {  } & ({ anyKind: void;
  } | {struct: void;
@@ -318,7 +318,7 @@ export type Reader = types_.Type.Reader;
 export module Brand{
 type Builder = { scopes?: $12382423449155627977.Builder[];
  }
-type Reader = { scopes: $12382423449155627977.Reader[];
+type Reader = { scopes?: $12382423449155627977.Reader[];
  }
 export module Scope{
 type Builder = { scopeId?: string;
@@ -326,7 +326,7 @@ type Builder = { scopeId?: string;
  } | {inherit?: void;
 } | {})
 type Reader = { scopeId: string;
- } & ({ bind: $14439610327179913212.Reader[];
+ } & ({ bind?: $14439610327179913212.Reader[];
  } | {inherit: void;
 } | {})
 
@@ -336,7 +336,7 @@ type Builder = {  } & ({ unbound?: void;
  } | {type?: $15020482145304562784.Builder;
 } | {})
 type Reader = {  } & ({ unbound: void;
- } | {type: $15020482145304562784.Reader;
+ } | {type?: $15020482145304562784.Reader;
 } | {})
 
 }
@@ -388,12 +388,12 @@ type Reader = {  } & ({ void: void;
 } | {float32: number;
 } | {float64: number;
 } | {text: string;
-} | {data: Buffer;
-} | {list: Buffer;
+} | {data?: Buffer;
+} | {list?: Buffer;
 } | {enum: number;
-} | {struct: Buffer;
+} | {struct?: Buffer;
 } | {interface: void;
-} | {anyPointer: Buffer;
+} | {anyPointer?: Buffer;
 } | {})
 
 }
@@ -407,8 +407,8 @@ value?: $14853958794117909659.Builder;
 brand?: $10391024731148337707.Builder;
  }
 type Reader = { id: string;
-value: $14853958794117909659.Reader;
-brand: $10391024731148337707.Reader;
+value?: $14853958794117909659.Reader;
+brand?: $10391024731148337707.Reader;
  }
 
 }
@@ -446,10 +446,10 @@ requestedFiles?: $14981803260258615394.Builder[];
 capnpVersion?: $15590670654532458851.Builder;
 sourceInfo?: $17549997658772559790.Builder[];
  }
-type Reader = { nodes: $16610026722781537303.Reader[];
-requestedFiles: $14981803260258615394.Reader[];
-capnpVersion: $15590670654532458851.Reader;
-sourceInfo: $17549997658772559790.Reader[];
+type Reader = { nodes?: $16610026722781537303.Reader[];
+requestedFiles?: $14981803260258615394.Reader[];
+capnpVersion?: $15590670654532458851.Reader;
+sourceInfo?: $17549997658772559790.Reader[];
  }
 export module RequestedFile{
 type Builder = { id?: string;
@@ -458,7 +458,7 @@ imports?: $12560611460656617445.Builder[];
  }
 type Reader = { id: string;
 filename: string;
-imports: $12560611460656617445.Reader[];
+imports?: $12560611460656617445.Reader[];
  }
 export module Import{
 type Builder = { id?: string;

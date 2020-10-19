@@ -12,14 +12,14 @@ save?:(param: $17829674341603767205.Reader) => Promise<$13215893102637674431.Bui
 export module SaveParams{
 type Builder = { sealFor?: Buffer;
  }
-type Reader = { sealFor: Buffer;
+type Reader = { sealFor?: Buffer;
  }
 
 }
 export module SaveResults{
 type Builder = { sturdyRef?: Buffer;
  }
-type Reader = { sturdyRef: Buffer;
+type Reader = { sturdyRef?: Buffer;
  }
 
 }

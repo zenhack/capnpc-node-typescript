@@ -73,7 +73,7 @@ cap?: Buffer;
  }
 type Reader = { joinId: string;
 succeeded: boolean;
-cap: Buffer;
+cap?: Buffer;
  }
 
 }

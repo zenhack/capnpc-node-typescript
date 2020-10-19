@@ -18,20 +18,20 @@ type Builder = {  } & ({ unimplemented?: $10500036013887172658.Builder;
 } | {join?: $18149955118657700271.Builder;
 } | {disembargo?: $17970548384007534353.Builder;
 } | {})
-type Reader = {  } & ({ unimplemented: $10500036013887172658.Reader;
- } | {abort: $15430940935639230746.Reader;
-} | {call: $9469473312751832276.Reader;
-} | {return: $11392333052105676602.Reader;
-} | {finish: $15239388059401719395.Reader;
-} | {resolve: $13529541526594062446.Reader;
-} | {release: $12473400923157197975.Reader;
-} | {obsoleteSave: Buffer;
-} | {bootstrap: $16811039658553601732.Reader;
-} | {obsoleteDelete: Buffer;
-} | {provide: $11270825879279873114.Reader;
-} | {accept: $15332985841292492822.Reader;
-} | {join: $18149955118657700271.Reader;
-} | {disembargo: $17970548384007534353.Reader;
+type Reader = {  } & ({ unimplemented?: $10500036013887172658.Reader;
+ } | {abort?: $15430940935639230746.Reader;
+} | {call?: $9469473312751832276.Reader;
+} | {return?: $11392333052105676602.Reader;
+} | {finish?: $15239388059401719395.Reader;
+} | {resolve?: $13529541526594062446.Reader;
+} | {release?: $12473400923157197975.Reader;
+} | {obsoleteSave?: Buffer;
+} | {bootstrap?: $16811039658553601732.Reader;
+} | {obsoleteDelete?: Buffer;
+} | {provide?: $11270825879279873114.Reader;
+} | {accept?: $15332985841292492822.Reader;
+} | {join?: $18149955118657700271.Reader;
+} | {disembargo?: $17970548384007534353.Reader;
 } | {})
 
 }
@@ -44,7 +44,7 @@ type Builder = { questionId?: string;
 deprecatedObjectId?: Buffer;
  }
 type Reader = { questionId: string;
-deprecatedObjectId: Buffer;
+deprecatedObjectId?: Buffer;
  }
 
 }
@@ -65,13 +65,13 @@ sendResultsTo?: {  } & ({ caller?: void;
 allowThirdPartyTailCall?: boolean;
  }
 type Reader = { questionId: string;
-target: $10789521159760378817.Reader;
+target?: $10789521159760378817.Reader;
 interfaceId: string;
 methodId: number;
-params: $11100916931204903995.Reader;
+params?: $11100916931204903995.Reader;
 sendResultsTo: {  } & ({ caller: void;
  } | {yourself: void;
-} | {thirdParty: Buffer;
+} | {thirdParty?: Buffer;
 } | {});
 allowThirdPartyTailCall: boolean;
  }
@@ -93,12 +93,12 @@ releaseParamCaps?: boolean;
 } | {})
 type Reader = { answerId: string;
 releaseParamCaps: boolean;
- } & ({ results: $11100916931204903995.Reader;
- } | {exception: $15430940935639230746.Reader;
+ } & ({ results?: $11100916931204903995.Reader;
+ } | {exception?: $15430940935639230746.Reader;
 } | {canceled: void;
 } | {resultsSentElsewhere: void;
 } | {takeFromOtherQuestion: string;
-} | {acceptFromThirdParty: Buffer;
+} | {acceptFromThirdParty?: Buffer;
 } | {})
 
 }
@@ -125,8 +125,8 @@ type Builder = { promiseId?: string;
  } | {exception?: $15430940935639230746.Builder;
 } | {})
 type Reader = { promiseId: string;
- } & ({ cap: $9593755465305995440.Reader;
- } | {exception: $15430940935639230746.Reader;
+ } & ({ cap?: $9593755465305995440.Reader;
+ } | {exception?: $15430940935639230746.Reader;
 } | {})
 
 }
@@ -155,7 +155,7 @@ context?: {  } & ({ senderLoopback?: string;
 } | {provide?: string;
 } | {});
  }
-type Reader = { target: $10789521159760378817.Reader;
+type Reader = { target?: $10789521159760378817.Reader;
 context: {  } & ({ senderLoopback: string;
  } | {receiverLoopback: string;
 } | {accept: void;
@@ -174,8 +174,8 @@ target?: $10789521159760378817.Builder;
 recipient?: Buffer;
  }
 type Reader = { questionId: string;
-target: $10789521159760378817.Reader;
-recipient: Buffer;
+target?: $10789521159760378817.Reader;
+recipient?: Buffer;
  }
 
 }
@@ -189,7 +189,7 @@ provision?: Buffer;
 embargo?: boolean;
  }
 type Reader = { questionId: string;
-provision: Buffer;
+provision?: Buffer;
 embargo: boolean;
  }
 
@@ -204,8 +204,8 @@ target?: $10789521159760378817.Builder;
 keyPart?: Buffer;
  }
 type Reader = { questionId: string;
-target: $10789521159760378817.Reader;
-keyPart: Buffer;
+target?: $10789521159760378817.Reader;
+keyPart?: Buffer;
  }
 
 }
@@ -218,7 +218,7 @@ type Builder = {  } & ({ importedCap?: string;
  } | {promisedAnswer?: $15564635848320162976.Builder;
 } | {})
 type Reader = {  } & ({ importedCap: string;
- } | {promisedAnswer: $15564635848320162976.Reader;
+ } | {promisedAnswer?: $15564635848320162976.Reader;
 } | {})
 
 }
@@ -230,8 +230,8 @@ export module Payload{
 type Builder = { content?: Buffer;
 capTable?: $9593755465305995440.Builder[];
  }
-type Reader = { content: Buffer;
-capTable: $9593755465305995440.Reader[];
+type Reader = { content?: Buffer;
+capTable?: $9593755465305995440.Reader[];
  }
 
 }
@@ -253,8 +253,8 @@ type Reader = { attachedFd: number;
  } | {senderHosted: string;
 } | {senderPromise: string;
 } | {receiverHosted: string;
-} | {receiverAnswer: $15564635848320162976.Reader;
-} | {thirdPartyHosted: $15235686326393111165.Reader;
+} | {receiverAnswer?: $15564635848320162976.Reader;
+} | {thirdPartyHosted?: $15235686326393111165.Reader;
 } | {})
 
 }
@@ -267,7 +267,7 @@ type Builder = { questionId?: string;
 transform?: $17516350820840804481.Builder[];
  }
 type Reader = { questionId: string;
-transform: $17516350820840804481.Reader[];
+transform?: $17516350820840804481.Reader[];
  }
 export module Op{
 type Builder = {  } & ({ noop?: void;
@@ -292,7 +292,7 @@ export module ThirdPartyCapDescriptor{
 type Builder = { id?: Buffer;
 vineId?: string;
  }
-type Reader = { id: Buffer;
+type Reader = { id?: Buffer;
 vineId: string;
  }
 
