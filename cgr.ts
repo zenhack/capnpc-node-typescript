@@ -24,6 +24,8 @@ function impossible(_n: never): never {
   throw new Error("impossible!");
 }
 
+type Polarity = "Pos" | "Neg";
+
 type NodeId = string;
 
 type StrDict<T> = { [k: string]: T }
@@ -70,6 +72,10 @@ interface FieldSpec {
   type: TypeRef;
 }
 
+function flipPolarity(p: Polarity): Polarity {
+  return (p === "Pos")? "Neg" : "Pos";
+}
+
 type TypeRef = (
   "void"
   | "boolean"
@@ -82,11 +88,13 @@ type TypeRef = (
   | { struct: TypeById }
   | { enum: TypeById }
   | { interface: TypeById }
+  | { paramName: string }
 );
 
 interface TypeById {
   typeId: NodeId;
   fileId?: NodeId;
+  typeParams: TypeRef[];
 }
 
 
@@ -170,15 +178,24 @@ function formatValues(name: string, path: Array<string>, spec: NodeOutSpec): iol
 
 function formatTypesById(path: iolist.IoList, spec: NodeOutSpec): iolist.IoList {
   const ret: iolist.IoList = ['export module $', spec.id, ' {\n'];
+  const params = spec.typeParams.map(paramName => { return { paramName } });
+  const posParams = formatTypeParams('Pos', params);
+  const negParams = formatTypeParams('Neg', params);
   if('struct' in spec || 'enum' in spec) {
     ret.push([
-      'export type Builder = ', path, '.Builder;\n',
-      'export type Reader = ', path, '.Reader;\n',
+      'export type Builder', negParams, ' = ', path, '.Builder;\n',
+      'export type Reader', posParams,' = ', path, '.Reader;\n',
     ]);
   } else if('interface' in spec) {
     ret.push([
-      'export type Client = ', path, '.Client;\n',
-      'export type Server = ', path, '.Server;\n',
+      'export type Client', posParams, ' = ', path, '.Client;\n',
+      'export type Server', negParams, ' = ', path, '.Server;\n',
+    ]);
+  }
+  if('struct' in spec || 'enum' in spec || 'interface' in spec) {
+    ret.push([
+      'export type Pos', posParams, ' = ', path, '.Pos;\n',
+      'export type Neg', negParams, ' = ', path, '.Neg;\n',
     ]);
   }
   ret.push('}\n');
@@ -202,20 +219,20 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
   if('struct' in spec) {
     const struct = assertDefined(spec.struct);
     result.push([
-      formatStructInterface('Builder', struct),
-      formatStructInterface('Reader', struct),
+      formatStructInterface('Pos', struct, spec.typeParams),
+      formatStructInterface('Neg', struct, spec.typeParams),
     ]);
   } else if('enum' in spec) {
     const enu = assertDefined(spec.enum);
     result.push([
-      formatEnumInterface('Builder', enu),
-      formatEnumInterface('Reader', enu),
+      formatEnumInterface('Pos', enu),
+      formatEnumInterface('Neg', enu),
     ]);
   } else if('interface' in spec) {
     const iface = assertDefined(spec.interface);
     result.push([
-      formatInterfaceInterface('Client', iface),
-      formatInterfaceInterface('Server', iface),
+      formatInterfaceInterface('Pos', iface),
+      formatInterfaceInterface('Neg', iface),
     ]);
   }
   result.push(body);
@@ -223,40 +240,38 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
   return result;
 }
 
-function formatInterfaceInterface(mode: "Client" | "Server", iface: InterfaceOutSpec): iolist.IoList {
-  const ret: iolist.IoList = ['type ', mode, ' = $Capnp.Any', mode]
+function formatInterfaceInterface(polarity: Polarity, iface: InterfaceOutSpec): iolist.IoList {
+  const ret: iolist.IoList = ['type ', polarity, ' = $Capnp.Any', polarity]
   for(let i = 0; i < iface.superIds.length; i++) {
-    ret.push([' & ', formatTypeById(mode, iface.superIds[i])])
+    ret.push([' & ', formatTypeById(polarity, iface.superIds[i])])
   }
   ret.push(' & {\n')
   for(const name in iface.methods) {
-    ret.push(formatMethod(mode, name, iface.methods[name]))
+    ret.push(formatMethod(polarity, name, iface.methods[name]))
   }
   ret.push('}\n')
   return ret
 }
 
-function formatMethod(mode: "Client" | "Server", name: string, method: MethodOutSpec) {
+function formatMethod(polarity: Polarity, name: string, method: MethodOutSpec) {
   const ret: iolist.IoList[] = [name];
-  if(mode === "Server") {
+  if(clientOrServer(polarity) === "Server") {
     ret.push("?")
   }
   ret.push(":(");
-  const argMode = (mode === "Server")? "Reader" : "Builder";
   if('declared' in method.params) {
-    ret.push(["param: ", formatTypeRef(argMode, method.params.declared)]);
+    ret.push(["param: ", formatTypeRef(flipPolarity(polarity), method.params.declared)]);
   } else {
-    ret.push(formatArgList(argMode, method.params.listed));
+    ret.push(formatArgList(flipPolarity(polarity), method.params.listed));
   }
   ret.push(") => ");
-  const resultMode = (mode === "Client")? "Reader" : "Builder";
   let result: iolist.IoList = [];
   if('declared' in method.results) {
-    result.push(formatTypeRef(resultMode, method.results.declared));
+    result.push(formatTypeRef(polarity, method.results.declared));
   } else {
-    result.push(['{', formatArgList(resultMode, method.results.listed), '}']);
+    result.push(['{', formatArgList(polarity, method.results.listed), '}']);
   }
-  if(mode === "Client") {
+  if(clientOrServer(polarity) === "Client") {
     result = ["Promise<", result, ">"];
   } else {
     result = ["Promise<", result, "> | ", result];
@@ -265,42 +280,69 @@ function formatMethod(mode: "Client" | "Server", name: string, method: MethodOut
   return ret
 }
 
-function formatArgList(mode: "Builder" | "Reader", args: FieldSpec[]): iolist.IoList {
+function formatArgList(polarity: Polarity, args: FieldSpec[]): iolist.IoList {
   const ret = []
   for(let i = 0; i < args.length; i++) {
     if(i !== 0) {
       ret.push(', ')
     }
     const {name, type} = args[i];
-    ret.push([name, ': ', formatTypeRef(mode, type)]);
+    ret.push([name, ': ', formatTypeRef(polarity, type)]);
   }
   return ret;
 }
 
-function formatEnumInterface(mode: "Builder" | "Reader", enumerants: string[]): iolist.IoList {
-  let ret: iolist.IoList = ['type ', mode, ' = '];
+function formatEnumInterface(polarity: Polarity, enumerants: string[]): iolist.IoList {
+  let ret: iolist.IoList = ['type ', polarity, ' = '];
   for(let i = 0; i < enumerants.length; i++) {
     ret = [ret, ' | ', JSON.stringify(enumerants[i])];
   }
-  if(mode === 'Reader') {
+  if(polarity === 'Pos') {
     ret = [ret, ' | number'];
   }
   ret = [ret, ';\n'];
   return ret;
 }
 
-function formatStructInterface(mode: "Builder" | "Reader", struct: StructOutSpec): iolist.IoList {
-  return ['type ', mode, ' = ', formatStructFields(mode, struct), "\n"];
+function formatTypeParams(polarity: Polarity, typeParams: TypeRef[]): iolist.IoList {
+  const result: iolist.IoList[] = [];
+  if(typeParams.length > 0) {
+    result.push('<');
+    for(let i = 0; i < typeParams.length; i++) {
+      if(i !== 0) {
+        result.push(', ')
+      }
+      const typeRef = typeParams[i];
+      result.push([
+        formatTypeRef(polarity, typeRef),
+        ",",
+        formatTypeRef(flipPolarity(polarity), typeRef),
+      ])
+    }
+    result.push('>');
+  }
+  return result;
 }
 
-function formatStructFields(mode: "Builder" | "Reader", struct: StructOutSpec) {
-  const fields = ["{ ", formatFields(mode, struct.commonFields), " }"];
+function formatStructInterface(polarity: Polarity, struct: StructOutSpec, typeParams: string[]): iolist.IoList {
+  const params = formatTypeParams(polarity, typeParams.map(paramName => {
+    return { paramName }
+  }));
+  const mode = (polarity === "Pos")? "Reader" : "Builder";
+  return [
+    ['type ', polarity, params, ' = ', formatStructFields(polarity, struct), "\n"],
+    ['type ', mode, params, ' = ', polarity, params, ";\n"],
+  ]
+}
+
+function formatStructFields(polarity: Polarity, struct: StructOutSpec): iolist.IoList {
+  const fields = ["{ ", formatFields(polarity, struct.commonFields), " }"];
   const keys = Object.getOwnPropertyNames(struct.unionFields);
   if(keys.length > 0) {
-    fields.push([" & ({ ", formatFields(mode, struct.unionFields[keys[0]]), " }"]);
+    fields.push([" & ({ ", formatFields(polarity, struct.unionFields[keys[0]]), " }"]);
     for(let i = 1; i < keys.length; i++) {
       fields.push(" | {");
-      fields.push(formatFields(mode, struct.unionFields[keys[i]]));
+      fields.push(formatFields(polarity, struct.unionFields[keys[i]]));
       fields.push("}");
     }
     fields.push(" | {})");
@@ -308,23 +350,27 @@ function formatStructFields(mode: "Builder" | "Reader", struct: StructOutSpec) {
   return fields;
 }
 
-function formatFields(mode: "Builder" | "Reader", fields: FieldSpec[]): iolist.IoList {
+function formatFields(polarity: Polarity, fields: FieldSpec[]): iolist.IoList {
   const result = [];
   for(const field of fields) {
     result.push(field.name);
-    if(mode === 'Builder' || isPointerType(field.type)) {
+    if(polarity == "Neg" || isPointerType(field.type)) {
       result.push('?');
     }
-    result.push([': ', formatTypeRef(mode, field.type), ";\n"]);
+    result.push([': ', formatTypeRef(polarity, field.type), ";\n"]);
   }
   return result;
 }
 
 function isPointerType(typ: TypeRef): boolean {
   if(typeof(typ) === 'object') {
-    return ('list' in typ) ||
-      ('struct' in typ) ||
-      ('interface' in typ)
+    if('list' in typ) return true;
+    if('struct' in typ) return true;
+    if('interface' in typ) return true;
+    if('group' in typ) return false;
+    if('enum' in typ) return false;
+    if('paramName' in typ) return true;
+    return impossible(typ);
   } else {
     switch(typ) {
     case "Capability":
@@ -341,37 +387,52 @@ function isPointerType(typ: TypeRef): boolean {
   }
 }
 
-function formatTypeById(mode: string, typ: TypeById): iolist.IoList {
-      let ret: iolist.IoList = ['$', typ.typeId, '.', mode];
+function formatTypeById(polarity: Polarity, typ: TypeById): iolist.IoList {
+      let ret: iolist.IoList =
+        ['$', typ.typeId, '.', polarity, formatTypeParams(polarity, typ.typeParams)];
       if('fileId' in typ) {
         ret = ['$', assertDefined(typ.fileId), '.types_.', ret];
       }
       return ret;
 }
 
-function formatTypeRef(mode: "Builder" | "Reader", typ: TypeRef): iolist.IoList {
+function readerOrBulder(polarity: Polarity): "Reader" | "Builder" {
+  if(polarity === "Neg") {
+    return "Builder";
+  } else {
+    return "Reader";
+  }
+}
+
+function clientOrServer(polarity: Polarity): "Client" | "Server" {
+  if(polarity === "Neg") {
+    return "Server";
+  } else {
+    return "Client";
+  }
+}
+
+function formatTypeRef(polarity: Polarity, typ: TypeRef): iolist.IoList {
   if(typ instanceof Object) {
     if('list' in typ) {
-      return [formatTypeRef(mode, typ.list), '[]']
+      return [formatTypeRef(polarity, typ.list), '[]']
     } else if('group' in typ) {
-      return formatStructFields(mode, typ.group);
+      return formatStructFields(polarity, typ.group);
     } else if('struct' in typ) {
-      return formatTypeById(mode, typ.struct);
+      return formatTypeById(polarity, typ.struct);
     } else if('enum' in typ) {
-      return formatTypeById(mode, typ.enum);
+      return formatTypeById(polarity, typ.enum);
     } else if('interface' in typ) {
       const iface = typ.interface;
-      const imode = (mode === "Builder")? "Server" : "Client";
-      return formatTypeById(imode, iface);
+      return formatTypeById(polarity, iface);
+    } else if('paramName' in typ) {
+      const name = typ.paramName;
+      return [name, '_', polarity];
     } else {
       return impossible(typ);
     }
   } else if(typ === "Capability") {
-    if(mode === "Builder") {
-      return "$Capnp.AnyServer";
-    } else {
-      return "$Capnp.AnyClient";
-    }
+    return ["$Capnp.Any", clientOrServer(polarity)];
   } else {
     // some other kind of string constant.
     return typ
@@ -564,13 +625,13 @@ function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeO
       methods: {}
     }
     for(let i = 0; i < supers.length; i++) {
-      spec.superIds.push(typeById(ctx, assertDefined(supers[i].id)));
+      spec.superIds.push(typeById(ctx, supers[i].id, supers[i].brand));
     }
     for(let i = 0; i < methods.length; i++) {
       const method = assertDefined(methods[i]);
       spec.methods[assertDefined(method.name)] = {
-        params: handleParamResult(ctx, method.paramStructType),
-        results: handleParamResult(ctx, method.resultStructType),
+        params: handleParamResult(ctx, method.paramStructType, method.paramBrand),
+        results: handleParamResult(ctx, method.resultStructType, method.resultBrand),
       };
     }
     result.interface = spec;
@@ -578,7 +639,7 @@ function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeO
   return result;
 }
 
-function handleParamResult(ctx: SpecBuilderCtx, structId: NodeId): ArgsOutSpec {
+function handleParamResult(ctx: SpecBuilderCtx, structId: NodeId, brand: schema.types_.Brand.Reader | undefined): ArgsOutSpec {
   const node = assertDefined(ctx.nodeMap[structId]);
   const fields = [];
   if(node.scopeId === '0') {
@@ -592,17 +653,33 @@ function handleParamResult(ctx: SpecBuilderCtx, structId: NodeId): ArgsOutSpec {
     }
     return { listed }
   } else {
-    return { declared: { struct: typeById(ctx, structId) } }
+    return { declared: { struct: typeById(ctx, structId, brand) } }
   }
 }
 
-function typeById(ctx: SpecBuilderCtx, typeId: NodeId): TypeById {
-    const fileId = assertDefined(findNodeFile(typeId, ctx.nodeMap).id);
-    if(fileId === ctx.thisFileId) {
-      return { typeId }
-    } else {
-      return { typeId, fileId }
-    }
+function typeById(ctx: SpecBuilderCtx, typeId: NodeId, brand: schema.types_.Brand.Reader | undefined): TypeById {
+  const typeParams = typeArgsByBrand(ctx, brand);
+  const fileId = assertDefined(findNodeFile(typeId, ctx.nodeMap).id);
+  if(fileId === ctx.thisFileId) {
+    return { typeId, typeParams }
+  } else {
+    return { typeId, typeParams, fileId }
+  }
+}
+
+function typeArgsByBrand(ctx: SpecBuilderCtx, brand: schema.types_.Brand.Reader | undefined): TypeRef[] {
+  console.log("Brand:", brand);
+  const result: TypeRef[] = [];
+  if(brand === undefined) {
+    return result
+  }
+  const scopes = assertDefined(brand.scopes);
+  for(let i = 0; i < scopes.length; i++) {
+    const scope = scopes[i];
+    const scopeNode = assertDefined(ctx.nodeMap[scope.scopeId]);
+    throw new Error("TODO");
+  }
+  return result;
 }
 
 function makeTypeRef(ctx: SpecBuilderCtx, typ: schema.types_.Type.Reader): TypeRef {
@@ -640,17 +717,21 @@ function makeTypeRef(ctx: SpecBuilderCtx, typ: schema.types_.Type.Reader): TypeR
       }
     } else if('parameter' in ptrType) {
       // Treat as a regular anypointer for now; TODO: generics.
+      const scope = ctx.nodeMap[assertDefined(ptrType.parameter.scopeId)];
+      const index = assertDefined(ptrType.parameter.parameterIndex);
+      const param = assertDefined(scope.parameters)[index];
+      return { paramName: assertDefined(param.name) }
       return 'Buffer';
     } else {
       console.log("Unknown anyPointer variant: ", typ)
       throw new Error("Unknown anyPointer variant");
     }
   } else if('struct' in typ) {
-    return { struct: typeById(ctx, typ.struct.typeId) }
+    return { struct: typeById(ctx, typ.struct.typeId, typ.struct.brand) }
   } else if('enum' in typ) {
-    return { enum: typeById(ctx, typ.enum.typeId) }
+    return { enum: typeById(ctx, typ.enum.typeId, typ.enum.brand) }
   } else if('interface' in typ) {
-    return { interface: typeById(ctx, typ.interface.typeId) }
+    return { interface: typeById(ctx, typ.interface.typeId, typ.interface.brand) }
   } else {
     console.error("Unknown type: ", typ, "; can't make type ref.");
     throw new Error("Unknown type can't make type ref.");
