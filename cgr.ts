@@ -44,7 +44,7 @@ interface NodeOutSpec {
   struct?: StructOutSpec;
   enum?: string[];
   interface?: InterfaceOutSpec;
-  typeParams: string[];
+  typeParams: TypeParamInfo[];
 }
 
 interface InterfaceOutSpec {
@@ -101,7 +101,13 @@ interface TypeById {
 interface SpecBuilderCtx {
   nodeMap: NodeMap;
   thisFileId: NodeId;
-  typeParams: string[];
+  typeParams: TypeParamInfo[];
+}
+
+interface TypeParamInfo {
+  scopeId: NodeId;
+  index: number;
+  name: string;
 }
 
 function assertDefined<T>(arg: T | undefined): T {
@@ -178,7 +184,7 @@ function formatValues(name: string, path: Array<string>, spec: NodeOutSpec): iol
 
 function formatTypesById(path: iolist.IoList, spec: NodeOutSpec): iolist.IoList {
   const ret: iolist.IoList = ['export module $', spec.id, ' {\n'];
-  const params = spec.typeParams.map(paramName => { return { paramName } });
+  const params = spec.typeParams.map(({name}) => { return { paramName: name } });
   const posParams = formatTypeParams('Pos', params);
   const negParams = formatTypeParams('Neg', params);
   if('struct' in spec || 'enum' in spec) {
@@ -324,14 +330,14 @@ function formatTypeParams(polarity: Polarity, typeParams: TypeRef[]): iolist.IoL
   return result;
 }
 
-function formatStructInterface(polarity: Polarity, struct: StructOutSpec, typeParams: string[]): iolist.IoList {
-  const params = formatTypeParams(polarity, typeParams.map(paramName => {
-    return { paramName }
+function formatStructInterface(polarity: Polarity, struct: StructOutSpec, typeParams: TypeParamInfo[]): iolist.IoList {
+  const paramNames = formatTypeParams(polarity, typeParams.map(param => {
+    return { paramName: param.name }
   }));
   const mode = (polarity === "Pos")? "Reader" : "Builder";
   return [
-    ['type ', polarity, params, ' = ', formatStructFields(polarity, struct), "\n"],
-    ['type ', mode, params, ' = ', polarity, params, ";\n"],
+    ['type ', polarity, paramNames, ' = ', formatStructFields(polarity, struct), "\n"],
+    ['type ', mode, paramNames, ' = ', polarity, paramNames, ";\n"],
   ]
 }
 
@@ -568,7 +574,11 @@ function addNodeTypeParams(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader)
   const params = assertDefined(node.parameters);
   const newParams = [];
   for(let i = 0; i < params.length; i++) {
-    newParams.push(params[i].name);
+    newParams.push({
+      scopeId: node.id,
+      index: i,
+      name: params[i].name,
+    });
   }
   if(newParams.length > 0) {
     return { ...ctx, typeParams: ctx.typeParams.concat(newParams) }
