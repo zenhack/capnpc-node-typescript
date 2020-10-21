@@ -684,7 +684,6 @@ function makeTypeRef(ctx: SpecBuilderCtx, typ: schema.types_.Type.Reader): TypeR
       const index = assertDefined(ptrType.parameter.parameterIndex);
       const param = assertDefined(scope.parameters)[index];
       return { paramName: assertDefined(param.name) }
-      return 'Buffer';
     } else {
       console.log("Unknown anyPointer variant: ", typ)
       throw new Error("Unknown anyPointer variant");
