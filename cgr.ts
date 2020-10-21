@@ -1,6 +1,6 @@
 import capnp from 'capnp';
 import schema from './capnp/schema.capnp.js';
-import { StrDict, impossible } from './util.js';
+import { StrDict, impossible, assertDefined, definedOr } from './util.js';
 
 import * as iolist from './iolist.js';
 
@@ -86,21 +86,6 @@ interface TypeParamInfo {
   scopeId: NodeId;
   index: number;
   name: string;
-}
-
-function assertDefined<T>(arg: T | undefined): T {
-  if(arg === undefined) {
-    throw new Error('Undefined.');
-  }
-  return arg;
-}
-
-function definedOr<T>(arg: T | undefined, def: T): T {
-  if(arg === undefined) {
-    return def
-  } else {
-    return arg
-  }
 }
 
 function findNodeFile(nodeId: NodeId, nodeMap: NodeMap): schema.types_.Node.Reader {
