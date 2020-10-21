@@ -8,7 +8,12 @@ type Polarity = "Pos" | "Neg";
 
 type NodeId = string;
 
-type NodeMap = StrDict<schema.types_.Node.Reader>
+type NodeMap = StrDict<schema.types_.Node.Reader>;
+
+interface ParamDirectory {
+  nameMap: StrDict<string[]>;
+  transMap: StrDict<TypeParamInfo[]>;
+}
 
 interface FileOutSpec {
   filename: string;
@@ -77,9 +82,9 @@ interface TypeById {
 
 
 interface SpecBuilderCtx {
+  paramDir: ParamDirectory;
   nodeMap: NodeMap;
   thisFileId: NodeId;
-  typeParams: TypeParamInfo[];
 }
 
 interface TypeParamInfo {
@@ -457,27 +462,75 @@ function formatCgr(cgr: CgrOutSpec): StrDict<iolist.IoList> {
   return result
 }
 
+function buildParamDirectory(nodeMap: NodeMap): ParamDirectory {
+  const result: ParamDirectory = {
+    nameMap: {},
+    transMap: {},
+  }
+  for(const nodeId of Object.getOwnPropertyNames(nodeMap)) {
+    const node = nodeMap[nodeId];
+    const params = definedOr(node.parameters, []);
+    const names = [];
+    for(let i = 0; i < params.length; i++) {
+      names.push(assertDefined(params[i].name));
+    }
+    result.nameMap[nodeId] = names;
+    if('file' in node) {
+      addToTransMap(result.transMap, nodeMap, node, []);
+    }
+  }
+  return result;
+}
+
+function addToTransMap(
+  transMap: StrDict<TypeParamInfo[]>,
+  nodeMap: NodeMap,
+  node: schema.types_.Node.Reader,
+  parentParams: TypeParamInfo[]): void {
+    const parameters = definedOr(node.parameters, []);
+    const newParams = [];
+    for(let i = 0; i < parameters.length; i++) {
+      const v = parameters[i];
+      newParams.push({
+        scopeId: node.id,
+        index: i,
+        name: assertDefined(v.name),
+      })
+    }
+    const allParams = parentParams.concat(newParams);
+    transMap[node.id] = allParams;
+
+    for(const nestedNode of definedOr(node.nestedNodes, [])) {
+      const next = nodeMap[nestedNode.id];
+      if(next) {
+        addToTransMap(transMap, nodeMap, next, allParams)
+      }
+    }
+}
+
 function handleCgr(cgr: schema.types_.CodeGeneratorRequest.Reader): CgrOutSpec {
   const nodeMap: NodeMap = {};
-  for(const node of assertDefined(cgr.nodes)) {
-    nodeMap[assertDefined(node.id)] = node;
+  const nodes = assertDefined(cgr.nodes);
+  for(const node of nodes) {
+    nodeMap[node.id] = node;
   }
-
+  const paramDir = buildParamDirectory(nodeMap);
   const out: CgrOutSpec = {}
-
   for(const file of assertDefined(cgr.requestedFiles)) {
-    out[assertDefined(file.filename)] = handleFile(nodeMap, file)
+    out[assertDefined(file.filename)] = handleFile(nodeMap, paramDir, file)
   }
   return out;
 }
 
 function handleFile(
   nodeMap: NodeMap,
+  paramDir: ParamDirectory,
   requestedFile: schema.types_.CodeGeneratorRequest.RequestedFile.Reader,
 ): FileOutSpec {
   const fileId = assertDefined(requestedFile.id);
   const fileNode = nodeMap[fileId];
   const ctx = {
+    paramDir,
     nodeMap,
     thisFileId: fileId,
     typeParams: [],
@@ -520,29 +573,8 @@ function handleField(ctx: SpecBuilderCtx, field: schema.types_.Field.Reader): Fi
   }
 }
 
-function addNodeTypeParams(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): SpecBuilderCtx {
-  if(!('parameters' in node)) {
-    return ctx;
-  }
-  const params = assertDefined(node.parameters);
-  const newParams = [];
-  for(let i = 0; i < params.length; i++) {
-    newParams.push({
-      scopeId: node.id,
-      index: i,
-      name: params[i].name,
-    });
-  }
-  if(newParams.length > 0) {
-    return { ...ctx, typeParams: ctx.typeParams.concat(newParams) }
-  } else {
-    return ctx
-  }
-}
-
 function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeOutSpec {
   const kids: StrDict<NodeOutSpec> = {};
-  ctx = addNodeTypeParams(ctx, node);
   for(const nestedNode of node.nestedNodes || []) {
     const kid: schema.types_.Node.Reader = ctx.nodeMap[assertDefined(nestedNode.id)];
     kids[assertDefined(nestedNode.name)] = handleNode(ctx, kid);
@@ -550,7 +582,7 @@ function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeO
   const result: NodeOutSpec = {
     id: assertDefined(node.id),
     kids: assertDefined(kids),
-    typeParams: ctx.typeParams,
+    typeParams: assertDefined(ctx.paramDir.transMap[node.id]),
   }
 
   // TODO: generate constants, then uncomment this.
