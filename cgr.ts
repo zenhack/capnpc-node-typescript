@@ -93,6 +93,37 @@ interface TypeParamInfo {
   name: string;
 }
 
+function instantiateTypeParams(
+  ctx: SpecBuilderCtx,
+  typeId: NodeId,
+  brand: schema.types_.Brand.Reader): TypeRef[] {
+    const scopeMap: StrDict<schema.types_.Brand.Scope.Reader> = {};
+
+    const scopes = definedOr(brand.scopes, []);
+    for(const scope of scopes) {
+      scopeMap[scope.scopeId] = scope;
+    }
+
+    const allParams = assertDefined(ctx.paramDir.transMap[typeId]);
+    return allParams.map(p => {
+      const scope = scopeMap[p.scopeId];
+      if('inherit' in scope) {
+        return { paramName: p.name }
+      } else if('bind' in scope) {
+        const bind = assertDefined(assertDefined(scope.bind)[p.index]);
+        if('unbound' in bind) {
+          return 'Buffer';
+        } else if('type' in bind) {
+          return makeTypeRef(ctx, assertDefined(bind.type));
+        } else {
+          throw new Error("Unknown Binding variant");
+        }
+      } else {
+        throw new Error("Unknown Brand.Scope variant");
+      }
+    });
+}
+
 function findNodeFile(nodeId: NodeId, nodeMap: NodeMap): schema.types_.Node.Reader {
   // Find the root scope of 'nodeId', which must be a file. Throws
   // if node's root scope is not a file, or if some node in the chain is
@@ -582,7 +613,7 @@ function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeO
   const result: NodeOutSpec = {
     id: assertDefined(node.id),
     kids: assertDefined(kids),
-    typeParams: assertDefined(ctx.paramDir.transMap[node.id]),
+    typeParams: definedOr(ctx.paramDir.transMap[node.id], []),
   }
 
   // TODO: generate constants, then uncomment this.
@@ -653,28 +684,13 @@ function handleParamResult(ctx: SpecBuilderCtx, structId: NodeId, brand: schema.
 }
 
 function typeById(ctx: SpecBuilderCtx, typeId: NodeId, brand: schema.types_.Brand.Reader | undefined): TypeById {
-  const typeParams = typeArgsByBrand(ctx, brand);
+  const typeParams = (brand === undefined)? [] : instantiateTypeParams(ctx, typeId, brand);
   const fileId = assertDefined(findNodeFile(typeId, ctx.nodeMap).id);
   if(fileId === ctx.thisFileId) {
     return { typeId, typeParams }
   } else {
     return { typeId, typeParams, fileId }
   }
-}
-
-function typeArgsByBrand(ctx: SpecBuilderCtx, brand: schema.types_.Brand.Reader | undefined): TypeRef[] {
-  console.log("Brand:", brand);
-  const result: TypeRef[] = [];
-  if(brand === undefined) {
-    return result
-  }
-  const scopes = assertDefined(brand.scopes);
-  for(let i = 0; i < scopes.length; i++) {
-    const scope = scopes[i];
-    const scopeNode = assertDefined(ctx.nodeMap[scope.scopeId]);
-    throw new Error("TODO");
-  }
-  return result;
 }
 
 function makeTypeRef(ctx: SpecBuilderCtx, typ: schema.types_.Type.Reader): TypeRef {
