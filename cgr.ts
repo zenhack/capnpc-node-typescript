@@ -1,34 +1,12 @@
 import capnp from 'capnp';
 import schema from './capnp/schema.capnp.js';
+import { StrDict, impossible } from './util.js';
 
 import * as iolist from './iolist.js';
-
-function impossible(_n: never): never {
-  // This function is used to assert that we've covered all cases;
-  // use like:
-  //
-  // if(...) {
-  //   ...
-  // } else if(...) {
-  //   ...
-  // } else {
-  //   impossible(foo);
-  // }
-  //
-  // This way, you'll get a type error if you've missed a case.
-  //
-  // If somehow the type checker misses something (possible, both
-  // because typescript's type system is unsound and because a
-  // separately defined type declaration file for something could
-  // be incorrect), this will throw an error rather than returning.
-  throw new Error("impossible!");
-}
 
 type Polarity = "Pos" | "Neg";
 
 type NodeId = string;
-
-type StrDict<T> = { [k: string]: T }
 
 type NodeMap = StrDict<schema.types_.Node.Reader>
 
