@@ -186,21 +186,25 @@ function formatTypesById(path: iolist.IoList, spec: NodeOutSpec): iolist.IoList 
   const params = spec.typeParams.map(({name}) => { return { paramName: name } });
   const posParams = formatTypeParams('Pos', params);
   const negParams = formatTypeParams('Neg', params);
+  const mkAlias = function (typ: string, params: iolist.IoList): iolist.IoList {
+    return ['export type ', typ, params, ' = ', path, '.', typ, params, ';\n'];
+  }
+
   if('struct' in spec || 'enum' in spec) {
     ret.push([
-      'export type Builder', negParams, ' = ', path, '.Builder;\n',
-      'export type Reader', posParams,' = ', path, '.Reader;\n',
+      mkAlias('Builder', negParams),
+      mkAlias('Reader', posParams),
     ]);
   } else if('interface' in spec) {
     ret.push([
-      'export type Client', posParams, ' = ', path, '.Client;\n',
-      'export type Server', negParams, ' = ', path, '.Server;\n',
+      mkAlias('Client', posParams),
+      mkAlias('Server', negParams),
     ]);
   }
   if('struct' in spec || 'enum' in spec || 'interface' in spec) {
     ret.push([
-      'export type Pos', posParams, ' = ', path, '.Pos;\n',
-      'export type Neg', negParams, ' = ', path, '.Neg;\n',
+      mkAlias('Pos', posParams),
+      mkAlias('Neg', negParams),
     ]);
   }
   ret.push('}\n');
@@ -236,8 +240,8 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
   } else if('interface' in spec) {
     const iface = assertDefined(spec.interface);
     result.push([
-      formatInterfaceInterface('Pos', iface),
-      formatInterfaceInterface('Neg', iface),
+      formatInterfaceInterface('Pos', iface, spec.typeParams),
+      formatInterfaceInterface('Neg', iface, spec.typeParams),
     ]);
   }
   result.push(body);
@@ -245,17 +249,26 @@ function formatTypes(name: string, path: Array<string>, spec: NodeOutSpec): ioli
   return result;
 }
 
-function formatInterfaceInterface(polarity: Polarity, iface: InterfaceOutSpec): iolist.IoList {
-  const ret: iolist.IoList = ['type ', polarity, ' = $Capnp.Any', polarity]
-  for(let i = 0; i < iface.superIds.length; i++) {
-    ret.push([' & ', formatTypeById(polarity, iface.superIds[i])])
-  }
-  ret.push(' & {\n')
-  for(const name in iface.methods) {
-    ret.push(formatMethod(polarity, name, iface.methods[name]))
-  }
-  ret.push('}\n')
-  return ret
+function formatInterfaceInterface(
+  polarity: Polarity,
+  iface: InterfaceOutSpec,
+  typeParams: TypeParamInfo[]): iolist.IoList {
+    const paramNames = formatTypeParams(polarity, typeParams.map(param => {
+      return { paramName: param.name }
+    }));
+    const mode = (polarity === "Pos")? "Client" : "Server";
+
+    const ret: iolist.IoList = ['type ', polarity, paramNames, ' = $Capnp.Any', mode]
+    for(let i = 0; i < iface.superIds.length; i++) {
+      ret.push([' & ', formatTypeById(polarity, iface.superIds[i])])
+    }
+    ret.push(' & {\n')
+    for(const name in iface.methods) {
+      ret.push(formatMethod(polarity, name, iface.methods[name]))
+    }
+    ret.push('}\n')
+    ret.push(['type ', mode, paramNames, ' = ', polarity, paramNames, ";\n"])
+    return ret
 }
 
 function formatMethod(polarity: Polarity, name: string, method: MethodOutSpec) {
@@ -292,6 +305,7 @@ function formatArgList(polarity: Polarity, args: FieldSpec[]): iolist.IoList {
 }
 
 function formatEnumInterface(polarity: Polarity, enumerants: string[]): iolist.IoList {
+  const mode = (polarity == "Pos")? "Reader" : "Builder";
   let ret: iolist.IoList = ['type ', polarity, ' = '];
   for(let i = 0; i < enumerants.length; i++) {
     ret = [ret, ' | ', JSON.stringify(enumerants[i])];
@@ -299,7 +313,10 @@ function formatEnumInterface(polarity: Polarity, enumerants: string[]): iolist.I
   if(polarity === 'Pos') {
     ret = [ret, ' | number'];
   }
-  ret = [ret, ';\n'];
+  ret = [
+    ret, ';\n',
+    'type ', mode, ' = ', polarity, ';\n',
+  ];
   return ret;
 }
 

@@ -3,279 +3,339 @@ import $13688829037717245569 from "capnp/c++.capnp.js";
 declare module $tmp {
 export module types_ {
 export module Message{
-type Builder = {  } & ({ unimplemented?: $10500036013887172658.Builder;
- } | {abort?: $15430940935639230746.Builder;
-} | {call?: $9469473312751832276.Builder;
-} | {return?: $11392333052105676602.Builder;
-} | {finish?: $15239388059401719395.Builder;
-} | {resolve?: $13529541526594062446.Builder;
-} | {release?: $12473400923157197975.Builder;
+type Pos = {  } & ({ unimplemented?: $10500036013887172658.Pos;
+ } | {abort?: $15430940935639230746.Pos;
+} | {call?: $9469473312751832276.Pos;
+} | {return?: $11392333052105676602.Pos;
+} | {finish?: $15239388059401719395.Pos;
+} | {resolve?: $13529541526594062446.Pos;
+} | {release?: $12473400923157197975.Pos;
 } | {obsoleteSave?: Buffer;
-} | {bootstrap?: $16811039658553601732.Builder;
+} | {bootstrap?: $16811039658553601732.Pos;
 } | {obsoleteDelete?: Buffer;
-} | {provide?: $11270825879279873114.Builder;
-} | {accept?: $15332985841292492822.Builder;
-} | {join?: $18149955118657700271.Builder;
-} | {disembargo?: $17970548384007534353.Builder;
+} | {provide?: $11270825879279873114.Pos;
+} | {accept?: $15332985841292492822.Pos;
+} | {join?: $18149955118657700271.Pos;
+} | {disembargo?: $17970548384007534353.Pos;
 } | {})
-type Reader = {  } & ({ unimplemented?: $10500036013887172658.Reader;
- } | {abort?: $15430940935639230746.Reader;
-} | {call?: $9469473312751832276.Reader;
-} | {return?: $11392333052105676602.Reader;
-} | {finish?: $15239388059401719395.Reader;
-} | {resolve?: $13529541526594062446.Reader;
-} | {release?: $12473400923157197975.Reader;
+type Reader = Pos;
+type Neg = {  } & ({ unimplemented?: $10500036013887172658.Neg;
+ } | {abort?: $15430940935639230746.Neg;
+} | {call?: $9469473312751832276.Neg;
+} | {return?: $11392333052105676602.Neg;
+} | {finish?: $15239388059401719395.Neg;
+} | {resolve?: $13529541526594062446.Neg;
+} | {release?: $12473400923157197975.Neg;
 } | {obsoleteSave?: Buffer;
-} | {bootstrap?: $16811039658553601732.Reader;
+} | {bootstrap?: $16811039658553601732.Neg;
 } | {obsoleteDelete?: Buffer;
-} | {provide?: $11270825879279873114.Reader;
-} | {accept?: $15332985841292492822.Reader;
-} | {join?: $18149955118657700271.Reader;
-} | {disembargo?: $17970548384007534353.Reader;
+} | {provide?: $11270825879279873114.Neg;
+} | {accept?: $15332985841292492822.Neg;
+} | {join?: $18149955118657700271.Neg;
+} | {disembargo?: $17970548384007534353.Neg;
 } | {})
+type Builder = Neg;
 
 }
 export module $10500036013887172658 {
 export type Builder = types_.Message.Builder;
 export type Reader = types_.Message.Reader;
+export type Pos = types_.Message.Pos;
+export type Neg = types_.Message.Neg;
 }
 export module Bootstrap{
-type Builder = { questionId?: string;
+type Pos = { questionId: string;
 deprecatedObjectId?: Buffer;
  }
-type Reader = { questionId: string;
+type Reader = Pos;
+type Neg = { questionId?: string;
 deprecatedObjectId?: Buffer;
  }
+type Builder = Neg;
 
 }
 export module $16811039658553601732 {
 export type Builder = types_.Bootstrap.Builder;
 export type Reader = types_.Bootstrap.Reader;
+export type Pos = types_.Bootstrap.Pos;
+export type Neg = types_.Bootstrap.Neg;
 }
 export module Call{
-type Builder = { questionId?: string;
-target?: $10789521159760378817.Builder;
-interfaceId?: string;
-methodId?: number;
-params?: $11100916931204903995.Builder;
-sendResultsTo?: {  } & ({ caller?: void;
- } | {yourself?: void;
-} | {thirdParty?: Buffer;
-} | {});
-allowThirdPartyTailCall?: boolean;
- }
-type Reader = { questionId: string;
-target?: $10789521159760378817.Reader;
+type Pos = { questionId: string;
+target?: $10789521159760378817.Pos;
 interfaceId: string;
 methodId: number;
-params?: $11100916931204903995.Reader;
+params?: $11100916931204903995.Pos;
 sendResultsTo: {  } & ({ caller: void;
  } | {yourself: void;
 } | {thirdParty?: Buffer;
 } | {});
 allowThirdPartyTailCall: boolean;
  }
+type Reader = Pos;
+type Neg = { questionId?: string;
+target?: $10789521159760378817.Neg;
+interfaceId?: string;
+methodId?: number;
+params?: $11100916931204903995.Neg;
+sendResultsTo?: {  } & ({ caller?: void;
+ } | {yourself?: void;
+} | {thirdParty?: Buffer;
+} | {});
+allowThirdPartyTailCall?: boolean;
+ }
+type Builder = Neg;
 
 }
 export module $9469473312751832276 {
 export type Builder = types_.Call.Builder;
 export type Reader = types_.Call.Reader;
+export type Pos = types_.Call.Pos;
+export type Neg = types_.Call.Neg;
 }
 export module Return{
-type Builder = { answerId?: string;
-releaseParamCaps?: boolean;
- } & ({ results?: $11100916931204903995.Builder;
- } | {exception?: $15430940935639230746.Builder;
-} | {canceled?: void;
-} | {resultsSentElsewhere?: void;
-} | {takeFromOtherQuestion?: string;
-} | {acceptFromThirdParty?: Buffer;
-} | {})
-type Reader = { answerId: string;
+type Pos = { answerId: string;
 releaseParamCaps: boolean;
- } & ({ results?: $11100916931204903995.Reader;
- } | {exception?: $15430940935639230746.Reader;
+ } & ({ results?: $11100916931204903995.Pos;
+ } | {exception?: $15430940935639230746.Pos;
 } | {canceled: void;
 } | {resultsSentElsewhere: void;
 } | {takeFromOtherQuestion: string;
 } | {acceptFromThirdParty?: Buffer;
 } | {})
+type Reader = Pos;
+type Neg = { answerId?: string;
+releaseParamCaps?: boolean;
+ } & ({ results?: $11100916931204903995.Neg;
+ } | {exception?: $15430940935639230746.Neg;
+} | {canceled?: void;
+} | {resultsSentElsewhere?: void;
+} | {takeFromOtherQuestion?: string;
+} | {acceptFromThirdParty?: Buffer;
+} | {})
+type Builder = Neg;
 
 }
 export module $11392333052105676602 {
 export type Builder = types_.Return.Builder;
 export type Reader = types_.Return.Reader;
+export type Pos = types_.Return.Pos;
+export type Neg = types_.Return.Neg;
 }
 export module Finish{
-type Builder = { questionId?: string;
-releaseResultCaps?: boolean;
- }
-type Reader = { questionId: string;
+type Pos = { questionId: string;
 releaseResultCaps: boolean;
  }
+type Reader = Pos;
+type Neg = { questionId?: string;
+releaseResultCaps?: boolean;
+ }
+type Builder = Neg;
 
 }
 export module $15239388059401719395 {
 export type Builder = types_.Finish.Builder;
 export type Reader = types_.Finish.Reader;
+export type Pos = types_.Finish.Pos;
+export type Neg = types_.Finish.Neg;
 }
 export module Resolve{
-type Builder = { promiseId?: string;
- } & ({ cap?: $9593755465305995440.Builder;
- } | {exception?: $15430940935639230746.Builder;
+type Pos = { promiseId: string;
+ } & ({ cap?: $9593755465305995440.Pos;
+ } | {exception?: $15430940935639230746.Pos;
 } | {})
-type Reader = { promiseId: string;
- } & ({ cap?: $9593755465305995440.Reader;
- } | {exception?: $15430940935639230746.Reader;
+type Reader = Pos;
+type Neg = { promiseId?: string;
+ } & ({ cap?: $9593755465305995440.Neg;
+ } | {exception?: $15430940935639230746.Neg;
 } | {})
+type Builder = Neg;
 
 }
 export module $13529541526594062446 {
 export type Builder = types_.Resolve.Builder;
 export type Reader = types_.Resolve.Reader;
+export type Pos = types_.Resolve.Pos;
+export type Neg = types_.Resolve.Neg;
 }
 export module Release{
-type Builder = { id?: string;
-referenceCount?: string;
- }
-type Reader = { id: string;
+type Pos = { id: string;
 referenceCount: string;
  }
+type Reader = Pos;
+type Neg = { id?: string;
+referenceCount?: string;
+ }
+type Builder = Neg;
 
 }
 export module $12473400923157197975 {
 export type Builder = types_.Release.Builder;
 export type Reader = types_.Release.Reader;
+export type Pos = types_.Release.Pos;
+export type Neg = types_.Release.Neg;
 }
 export module Disembargo{
-type Builder = { target?: $10789521159760378817.Builder;
-context?: {  } & ({ senderLoopback?: string;
- } | {receiverLoopback?: string;
-} | {accept?: void;
-} | {provide?: string;
-} | {});
- }
-type Reader = { target?: $10789521159760378817.Reader;
+type Pos = { target?: $10789521159760378817.Pos;
 context: {  } & ({ senderLoopback: string;
  } | {receiverLoopback: string;
 } | {accept: void;
 } | {provide: string;
 } | {});
  }
+type Reader = Pos;
+type Neg = { target?: $10789521159760378817.Neg;
+context?: {  } & ({ senderLoopback?: string;
+ } | {receiverLoopback?: string;
+} | {accept?: void;
+} | {provide?: string;
+} | {});
+ }
+type Builder = Neg;
 
 }
 export module $17970548384007534353 {
 export type Builder = types_.Disembargo.Builder;
 export type Reader = types_.Disembargo.Reader;
+export type Pos = types_.Disembargo.Pos;
+export type Neg = types_.Disembargo.Neg;
 }
 export module Provide{
-type Builder = { questionId?: string;
-target?: $10789521159760378817.Builder;
+type Pos = { questionId: string;
+target?: $10789521159760378817.Pos;
 recipient?: Buffer;
  }
-type Reader = { questionId: string;
-target?: $10789521159760378817.Reader;
+type Reader = Pos;
+type Neg = { questionId?: string;
+target?: $10789521159760378817.Neg;
 recipient?: Buffer;
  }
+type Builder = Neg;
 
 }
 export module $11270825879279873114 {
 export type Builder = types_.Provide.Builder;
 export type Reader = types_.Provide.Reader;
+export type Pos = types_.Provide.Pos;
+export type Neg = types_.Provide.Neg;
 }
 export module Accept{
-type Builder = { questionId?: string;
-provision?: Buffer;
-embargo?: boolean;
- }
-type Reader = { questionId: string;
+type Pos = { questionId: string;
 provision?: Buffer;
 embargo: boolean;
  }
+type Reader = Pos;
+type Neg = { questionId?: string;
+provision?: Buffer;
+embargo?: boolean;
+ }
+type Builder = Neg;
 
 }
 export module $15332985841292492822 {
 export type Builder = types_.Accept.Builder;
 export type Reader = types_.Accept.Reader;
+export type Pos = types_.Accept.Pos;
+export type Neg = types_.Accept.Neg;
 }
 export module Join{
-type Builder = { questionId?: string;
-target?: $10789521159760378817.Builder;
+type Pos = { questionId: string;
+target?: $10789521159760378817.Pos;
 keyPart?: Buffer;
  }
-type Reader = { questionId: string;
-target?: $10789521159760378817.Reader;
+type Reader = Pos;
+type Neg = { questionId?: string;
+target?: $10789521159760378817.Neg;
 keyPart?: Buffer;
  }
+type Builder = Neg;
 
 }
 export module $18149955118657700271 {
 export type Builder = types_.Join.Builder;
 export type Reader = types_.Join.Reader;
+export type Pos = types_.Join.Pos;
+export type Neg = types_.Join.Neg;
 }
 export module MessageTarget{
-type Builder = {  } & ({ importedCap?: string;
- } | {promisedAnswer?: $15564635848320162976.Builder;
+type Pos = {  } & ({ importedCap: string;
+ } | {promisedAnswer?: $15564635848320162976.Pos;
 } | {})
-type Reader = {  } & ({ importedCap: string;
- } | {promisedAnswer?: $15564635848320162976.Reader;
+type Reader = Pos;
+type Neg = {  } & ({ importedCap?: string;
+ } | {promisedAnswer?: $15564635848320162976.Neg;
 } | {})
+type Builder = Neg;
 
 }
 export module $10789521159760378817 {
 export type Builder = types_.MessageTarget.Builder;
 export type Reader = types_.MessageTarget.Reader;
+export type Pos = types_.MessageTarget.Pos;
+export type Neg = types_.MessageTarget.Neg;
 }
 export module Payload{
-type Builder = { content?: Buffer;
-capTable?: $9593755465305995440.Builder[];
+type Pos = { content?: Buffer;
+capTable?: $9593755465305995440.Pos[];
  }
-type Reader = { content?: Buffer;
-capTable?: $9593755465305995440.Reader[];
+type Reader = Pos;
+type Neg = { content?: Buffer;
+capTable?: $9593755465305995440.Neg[];
  }
+type Builder = Neg;
 
 }
 export module $11100916931204903995 {
 export type Builder = types_.Payload.Builder;
 export type Reader = types_.Payload.Reader;
+export type Pos = types_.Payload.Pos;
+export type Neg = types_.Payload.Neg;
 }
 export module CapDescriptor{
-type Builder = { attachedFd?: number;
- } & ({ none?: void;
- } | {senderHosted?: string;
-} | {senderPromise?: string;
-} | {receiverHosted?: string;
-} | {receiverAnswer?: $15564635848320162976.Builder;
-} | {thirdPartyHosted?: $15235686326393111165.Builder;
-} | {})
-type Reader = { attachedFd: number;
+type Pos = { attachedFd: number;
  } & ({ none: void;
  } | {senderHosted: string;
 } | {senderPromise: string;
 } | {receiverHosted: string;
-} | {receiverAnswer?: $15564635848320162976.Reader;
-} | {thirdPartyHosted?: $15235686326393111165.Reader;
+} | {receiverAnswer?: $15564635848320162976.Pos;
+} | {thirdPartyHosted?: $15235686326393111165.Pos;
 } | {})
+type Reader = Pos;
+type Neg = { attachedFd?: number;
+ } & ({ none?: void;
+ } | {senderHosted?: string;
+} | {senderPromise?: string;
+} | {receiverHosted?: string;
+} | {receiverAnswer?: $15564635848320162976.Neg;
+} | {thirdPartyHosted?: $15235686326393111165.Neg;
+} | {})
+type Builder = Neg;
 
 }
 export module $9593755465305995440 {
 export type Builder = types_.CapDescriptor.Builder;
 export type Reader = types_.CapDescriptor.Reader;
+export type Pos = types_.CapDescriptor.Pos;
+export type Neg = types_.CapDescriptor.Neg;
 }
 export module PromisedAnswer{
-type Builder = { questionId?: string;
-transform?: $17516350820840804481.Builder[];
+type Pos = { questionId: string;
+transform?: $17516350820840804481.Pos[];
  }
-type Reader = { questionId: string;
-transform?: $17516350820840804481.Reader[];
+type Reader = Pos;
+type Neg = { questionId?: string;
+transform?: $17516350820840804481.Neg[];
  }
+type Builder = Neg;
 export module Op{
-type Builder = {  } & ({ noop?: void;
- } | {getPointerField?: number;
-} | {})
-type Reader = {  } & ({ noop: void;
+type Pos = {  } & ({ noop: void;
  } | {getPointerField: number;
 } | {})
+type Reader = Pos;
+type Neg = {  } & ({ noop?: void;
+ } | {getPointerField?: number;
+} | {})
+type Builder = Neg;
 
 }
 
@@ -283,38 +343,50 @@ type Reader = {  } & ({ noop: void;
 export module $15564635848320162976 {
 export type Builder = types_.PromisedAnswer.Builder;
 export type Reader = types_.PromisedAnswer.Reader;
+export type Pos = types_.PromisedAnswer.Pos;
+export type Neg = types_.PromisedAnswer.Neg;
 }
 export module $17516350820840804481 {
 export type Builder = types_.PromisedAnswer.Op.Builder;
 export type Reader = types_.PromisedAnswer.Op.Reader;
+export type Pos = types_.PromisedAnswer.Op.Pos;
+export type Neg = types_.PromisedAnswer.Op.Neg;
 }
 export module ThirdPartyCapDescriptor{
-type Builder = { id?: Buffer;
-vineId?: string;
- }
-type Reader = { id?: Buffer;
+type Pos = { id?: Buffer;
 vineId: string;
  }
+type Reader = Pos;
+type Neg = { id?: Buffer;
+vineId?: string;
+ }
+type Builder = Neg;
 
 }
 export module $15235686326393111165 {
 export type Builder = types_.ThirdPartyCapDescriptor.Builder;
 export type Reader = types_.ThirdPartyCapDescriptor.Reader;
+export type Pos = types_.ThirdPartyCapDescriptor.Pos;
+export type Neg = types_.ThirdPartyCapDescriptor.Neg;
 }
 export module Exception{
-type Builder = { reason?: string;
-obsoleteIsCallersFault?: boolean;
-obsoleteDurability?: number;
-type?: $12865824133959433560.Builder;
- }
-type Reader = { reason: string;
+type Pos = { reason: string;
 obsoleteIsCallersFault: boolean;
 obsoleteDurability: number;
-type: $12865824133959433560.Reader;
+type: $12865824133959433560.Pos;
  }
+type Reader = Pos;
+type Neg = { reason?: string;
+obsoleteIsCallersFault?: boolean;
+obsoleteDurability?: number;
+type?: $12865824133959433560.Neg;
+ }
+type Builder = Neg;
 export module Type{
-type Builder =  | "failed" | "overloaded" | "disconnected" | "unimplemented";
-type Reader =  | "failed" | "overloaded" | "disconnected" | "unimplemented" | number;
+type Pos =  | "failed" | "overloaded" | "disconnected" | "unimplemented" | number;
+type Reader = Pos;
+type Neg =  | "failed" | "overloaded" | "disconnected" | "unimplemented";
+type Builder = Neg;
 
 }
 
@@ -322,10 +394,14 @@ type Reader =  | "failed" | "overloaded" | "disconnected" | "unimplemented" | nu
 export module $15430940935639230746 {
 export type Builder = types_.Exception.Builder;
 export type Reader = types_.Exception.Reader;
+export type Pos = types_.Exception.Pos;
+export type Neg = types_.Exception.Neg;
 }
 export module $12865824133959433560 {
 export type Builder = types_.Exception.Type.Builder;
 export type Reader = types_.Exception.Type.Reader;
+export type Pos = types_.Exception.Type.Pos;
+export type Neg = types_.Exception.Type.Neg;
 }
 }
 export const Message: $Capnp.StructSchema<types_.Message.Reader, types_.Message.Builder> & {
