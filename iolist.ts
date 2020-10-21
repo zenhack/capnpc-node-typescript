@@ -32,3 +32,15 @@ export function writeFile(path: string, data: IoList): void {
     }
   }
 }
+
+export function join(sep: IoList, parts: IoList[]): IoList {
+  if(parts.length === 0) {
+    return [];
+  }
+  const result = [parts[0]];
+  for(let i = 1; i < parts.length; i++) {
+    result.push(sep);
+    result.push(parts[i]);
+  }
+  return result;
+}

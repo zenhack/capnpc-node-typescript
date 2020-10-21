@@ -265,15 +265,9 @@ function formatMethod(polarity: Polarity, name: string, method: MethodOutSpec) {
 }
 
 function formatArgList(polarity: Polarity, args: FieldSpec[]): iolist.IoList {
-  const ret = []
-  for(let i = 0; i < args.length; i++) {
-    if(i !== 0) {
-      ret.push(', ')
-    }
-    const {name, type} = args[i];
-    ret.push([name, ': ', formatTypeRef(polarity, type)]);
-  }
-  return ret;
+  return iolist.join(", ", args.map(({name, type}) => {
+      return [name, ': ', formatTypeRef(polarity, type)];
+  }))
 }
 
 function formatEnumInterface(polarity: Polarity, enumerants: string[]): iolist.IoList {
@@ -289,23 +283,19 @@ function formatEnumInterface(polarity: Polarity, enumerants: string[]): iolist.I
 }
 
 function formatTypeParams(polarity: Polarity, typeParams: TypeRef[]): iolist.IoList {
-  const result: iolist.IoList[] = [];
-  if(typeParams.length > 0) {
-    result.push('<');
-    for(let i = 0; i < typeParams.length; i++) {
-      if(i !== 0) {
-        result.push(', ')
-      }
-      const typeRef = typeParams[i];
-      result.push([
-        formatTypeRef(polarity, typeRef),
-        ",",
-        formatTypeRef(flipPolarity(polarity), typeRef),
-      ])
-    }
-    result.push('>');
+  if(typeParams.length === 0) {
+    return '';
   }
-  return result;
+  const args: iolist.IoList[] = [];
+  for(let i = 0; i < typeParams.length; i++) {
+    const typeRef = typeParams[i];
+    args.push([
+      formatTypeRef(polarity, typeRef),
+      ",",
+      formatTypeRef(flipPolarity(polarity), typeRef),
+    ])
+  }
+  return ['<', iolist.join(", ", args), '>'];
 }
 
 function formatStructInterface(polarity: Polarity, struct: StructOutSpec, typeParams: TypeParamInfo[]): iolist.IoList {
