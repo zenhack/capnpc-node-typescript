@@ -28,6 +28,10 @@ interface NodeOutSpec {
   enum?: string[];
   interface?: InterfaceOutSpec;
   typeParams: TypeParamInfo[];
+
+  // TODO: we really should refactor this so that the types & constants
+  // are different parts of a union.
+  constant?: TypeRef;
 }
 
 interface InterfaceOutSpec {
@@ -157,14 +161,17 @@ function formatValueTypes(path: Array<string>, spec: NodeOutSpec, struct: Struct
   for(const k of keys) {
     const kid = spec.kids[k];
     const struct = kid.struct;
-    if(struct === undefined) {
-      continue;
+    if(struct !== undefined) {
+      path.push(k);
+      result.push([k, ': ', formatSchemaType(path), ' & {\n'])
+      result.push(formatValueTypes(path, kid, struct));
+      result.push('\},\n');
+      path.pop();
     }
-    path.push(k);
-    result.push([k, ': ', formatSchemaType(path), ' & {\n']);
-    result.push(formatValueTypes(path, kid, struct));
-    result.push('\},\n');
-    path.pop();
+    const constant = kid.constant;
+    if(constant !== undefined) {
+      result.push([k, ': ', formatTypeRef('Pos', constant), ',\n']);
+    }
   }
   return result;
 }
@@ -178,6 +185,12 @@ function formatValues(name: string, path: Array<string>, spec: NodeOutSpec): iol
       '};\n',
     ]
   }
+
+  const constant = spec.constant;
+  if(constant !== undefined) {
+    return ['export const ', name, ': ', formatTypeRef('Pos', constant), ";\n"];
+  }
+
   return [];
 }
 
@@ -633,11 +646,11 @@ function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeO
     typeParams: definedOr(ctx.paramDir.transMap[node.id], []),
   }
 
-  // TODO: generate constants, then uncomment this.
-  //const noDiscrim = schema.Field.noDiscriminant;
-  const noDiscrim = 0xffff;
+  const noDiscrim = schema.Field.noDiscriminant;
 
-  if('struct' in node) {
+  if('const' in node) {
+    result.constant = makeTypeRef(ctx, assertDefined(node.const.type));
+  } else if('struct' in node) {
     const unionFields: StrDict<FieldSpec[]> = {};
     unionFields[noDiscrim] = [];
     if('fields' in node.struct) {

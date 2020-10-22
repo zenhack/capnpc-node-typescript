@@ -577,6 +577,7 @@ Member: $Capnp.StructSchema<types_.Node.SourceInfo.Member.Reader, types_.Node.So
 },
 };
 export const Field: $Capnp.StructSchema<types_.Field.Reader, types_.Field.Builder> & {
+noDiscriminant: number,
 };
 export const Enumerant: $Capnp.StructSchema<types_.Enumerant.Reader, types_.Enumerant.Builder> & {
 };
