@@ -1,5 +1,5 @@
 import capnp from 'capnp';
-import schema from './capnp/schema.capnp.js';
+import schema from '../capnp/schema.capnp.js';
 import { StrDict, impossible, assertDefined, definedOr } from './util.js';
 
 import * as iolist from './iolist.js';

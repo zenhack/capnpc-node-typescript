@@ -5,12 +5,16 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc && cp -r ./capnp build/",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
     "capnpc-node-typescript": "./bin/capnpc-node-typescript.js"
   },
+  "files": [
+    "capnp/*.d.ts",
+    "capnp/*.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zenhack/capnpc-node-typescript.git"
