@@ -11,8 +11,14 @@ type NodeId = string;
 type NodeMap = StrDict<schema.types_.Node.Reader>;
 
 interface ParamDirectory {
+  // Lookup tables for type parameters.
+
   nameMap: StrDict<string[]>;
+  // Maps node ids to lists of parameter names.
+
   transMap: StrDict<TypeParamInfo[]>;
+  // Maps node ids to lists of all type parameters in scope for
+  // the node (including parameters on parent scopes).
 }
 
 interface FileOutSpec {
@@ -757,7 +763,6 @@ function makeTypeRef(ctx: SpecBuilderCtx, typ: schema.types_.Type.Reader): TypeR
         return 'Buffer';
       }
     } else if('parameter' in ptrType) {
-      // Treat as a regular anypointer for now; TODO: generics.
       const scope = ctx.nodeMap[assertDefined(ptrType.parameter.scopeId)];
       const index = assertDefined(ptrType.parameter.parameterIndex);
       const param = assertDefined(scope.parameters)[index];
