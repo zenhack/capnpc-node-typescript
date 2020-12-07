@@ -27,18 +27,19 @@ interface FileOutSpec {
   root: NodeOutSpec;
 }
 
-interface NodeOutSpec {
+interface NodeOutSpecCommon {
   id: NodeId;
   kids: StrDict<NodeOutSpec>;
-  struct?: StructOutSpec;
-  enum?: string[];
-  interface?: InterfaceOutSpec;
   typeParams: TypeParamInfo[];
-
-  // TODO: we really should refactor this so that the types & constants
-  // are different parts of a union.
-  constant?: TypeRef;
 }
+
+type NodeOutSpec = NodeOutSpecCommon & (
+  | { struct: StructOutSpec }
+  | { enum: string[] }
+  | { interface: InterfaceOutSpec }
+  | { constant: TypeRef }
+  | { }
+)
 
 interface InterfaceOutSpec {
   superIds: TypeById[];
@@ -166,16 +167,15 @@ function formatValueTypes(path: Array<string>, spec: NodeOutSpec, struct: Struct
   const keys = Object.getOwnPropertyNames(spec.kids);
   for(const k of keys) {
     const kid = spec.kids[k];
-    const struct = kid.struct;
-    if(struct !== undefined) {
+    if('struct' in kid) {
+      const struct = kid.struct;
       path.push(k);
       result.push([k, ': ', formatSchemaType(path), ' & {\n'])
       result.push(formatValueTypes(path, kid, struct));
       result.push('\},\n');
       path.pop();
-    }
-    const constant = kid.constant;
-    if(constant !== undefined) {
+    } else if('constant' in kid) {
+      const constant = kid.constant;
       result.push([k, ': ', formatTypeRef('Pos', constant), ',\n']);
     }
   }
@@ -183,21 +183,19 @@ function formatValueTypes(path: Array<string>, spec: NodeOutSpec, struct: Struct
 }
 
 function formatValues(name: string, path: Array<string>, spec: NodeOutSpec): iolist.IoList {
-  const struct = spec.struct;
-  if(struct !== undefined) {
+  if('struct' in spec) {
+    const struct = spec.struct;
     return [
       ['export const ', name, ': ', formatSchemaType(path), ' & {\n'],
       formatValueTypes(path, spec, struct),
       '};\n',
     ]
-  }
-
-  const constant = spec.constant;
-  if(constant !== undefined) {
+  } else if('constant' in spec) {
+    const constant = spec.constant;
     return ['export const ', name, ': ', formatTypeRef('Pos', constant), ";\n"];
+  } else {
+    return [];
   }
-
-  return [];
 }
 
 function formatTypesById(path: iolist.IoList, spec: NodeOutSpec): iolist.IoList {
@@ -627,13 +625,12 @@ function handleField(ctx: SpecBuilderCtx, field: schema.types_.Field.Reader): Fi
     const groupId = assertDefined(field.group.typeId);
     const groupNode = assertDefined(ctx.nodeMap[groupId]);
     const groupSpec = handleNode(ctx, groupNode);
-    const groupStruct = groupSpec.struct;
-    if(groupStruct === undefined) {
+    if(!('struct' in groupSpec)) {
       throw new Error("Group field " + field.toString() + " is not a struct.");
     }
     return {
       name: assertDefined(field.name),
-      type: { group: groupStruct },
+      type: { group: groupSpec.struct },
     };
   } else {
     throw new Error("Unsupported field type (neither slot nor group)");
@@ -646,7 +643,7 @@ function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeO
     const kid: schema.types_.Node.Reader = ctx.nodeMap[assertDefined(nestedNode.id)];
     kids[assertDefined(nestedNode.name)] = handleNode(ctx, kid);
   }
-  const result: NodeOutSpec = {
+  const result: NodeOutSpecCommon = {
     id: assertDefined(node.id),
     kids: assertDefined(kids),
     typeParams: definedOr(ctx.paramDir.transMap[node.id], []),
@@ -655,7 +652,10 @@ function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeO
   const noDiscrim = schema.Field.noDiscriminant;
 
   if('const' in node) {
-    result.constant = makeTypeRef(ctx, assertDefined(node.const.type));
+    return {
+      constant: makeTypeRef(ctx, assertDefined(node.const.type)),
+      ...result,
+    }
   } else if('struct' in node) {
     const unionFields: StrDict<FieldSpec[]> = {};
     unionFields[noDiscrim] = [];
@@ -671,12 +671,15 @@ function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeO
     }
     const commonFields = unionFields[noDiscrim];
     delete unionFields[noDiscrim];
-    result.struct = { commonFields, unionFields };
+    return {
+      struct: { commonFields, unionFields },
+      ...result,
+    }
   } else if('enum' in node) {
     const enumerants = assertDefined(node.enum.enumerants);
-    result.enum = [];
-    for(let i = 0; i < enumerants.length; i++) {
-      result.enum.push(assertDefined(enumerants[i].name));
+    return {
+      enum: enumerants.map(x => assertDefined(x.name)),
+      ...result,
     }
   } else if('interface' in node) {
     const iface = node.interface;
@@ -696,7 +699,10 @@ function handleNode(ctx: SpecBuilderCtx, node: schema.types_.Node.Reader): NodeO
         results: handleParamResult(ctx, method.resultStructType, method.resultBrand),
       };
     }
-    result.interface = spec;
+    return {
+      interface: spec,
+      ...result,
+    }
   }
   return result;
 }
