@@ -16,7 +16,7 @@ export type Pos = types_.StreamResult.Pos;
 export type Neg = types_.StreamResult.Neg;
 }
 }
-export const StreamResult: $Capnp.StructSchema<types_.StreamResult.Reader, types_.StreamResult.Builder> & {
+export const StreamResult: $Capnp.StructSchema<types_.StreamResult.Builder, types_.StreamResult.Reader> & {
 };
 
 }

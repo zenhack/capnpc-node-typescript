@@ -110,17 +110,17 @@ export type Pos = types_.JoinResult.Pos;
 export type Neg = types_.JoinResult.Neg;
 }
 }
-export const VatId: $Capnp.StructSchema<types_.VatId.Reader, types_.VatId.Builder> & {
+export const VatId: $Capnp.StructSchema<types_.VatId.Builder, types_.VatId.Reader> & {
 };
-export const ProvisionId: $Capnp.StructSchema<types_.ProvisionId.Reader, types_.ProvisionId.Builder> & {
+export const ProvisionId: $Capnp.StructSchema<types_.ProvisionId.Builder, types_.ProvisionId.Reader> & {
 };
-export const RecipientId: $Capnp.StructSchema<types_.RecipientId.Reader, types_.RecipientId.Builder> & {
+export const RecipientId: $Capnp.StructSchema<types_.RecipientId.Builder, types_.RecipientId.Reader> & {
 };
-export const ThirdPartyCapId: $Capnp.StructSchema<types_.ThirdPartyCapId.Reader, types_.ThirdPartyCapId.Builder> & {
+export const ThirdPartyCapId: $Capnp.StructSchema<types_.ThirdPartyCapId.Builder, types_.ThirdPartyCapId.Reader> & {
 };
-export const JoinKeyPart: $Capnp.StructSchema<types_.JoinKeyPart.Reader, types_.JoinKeyPart.Builder> & {
+export const JoinKeyPart: $Capnp.StructSchema<types_.JoinKeyPart.Builder, types_.JoinKeyPart.Reader> & {
 };
-export const JoinResult: $Capnp.StructSchema<types_.JoinResult.Reader, types_.JoinResult.Builder> & {
+export const JoinResult: $Capnp.StructSchema<types_.JoinResult.Builder, types_.JoinResult.Reader> & {
 };
 
 }

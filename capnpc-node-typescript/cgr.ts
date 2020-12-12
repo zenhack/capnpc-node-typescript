@@ -155,23 +155,39 @@ function findNodeFile(nodeId: NodeId, nodeMap: NodeMap): schema.types_.Node.Read
   return node;
 }
 
-function formatSchemaType(path: Array<string>): iolist.IoList {
+function formatSchemaType(path: string[], spec: NodeOutSpec): iolist.IoList {
   const name = path.join('.');
+  let params = iolist.join(', ', spec.typeParams.map(_ => "Buffer,Buffer"))
+  if(params.length !== 0) {
+    params = ['<', params, '>']
+  }
+  let kind = 'Struct';
+  let pos = 'Reader';
+  let neg = 'Builder';
+  if('struct' in spec) {
+  } else if('interface' in spec) {
+    kind = 'Interface';
+    pos = 'Client';
+    neg = 'Server';
+  } else {
+    // TODO: make this more type safe, such that this case is eliminated statically.
+    throw new Error("can't generate schema constant for " +  name);
+  }
   return [
-    '$Capnp.StructSchema<types_.', name, '.Reader, types_.', name, '.Builder>',
+    '$Capnp.', kind, 'Schema<types_.', name, '.',
+      neg, params, ', types_.', name, '.', pos, params, '>',
   ]
 }
 
-function formatValueTypes(path: Array<string>, spec: NodeOutSpec, struct: StructOutSpec): iolist.IoList {
+function formatValueTypes(path: Array<string>, spec: NodeOutSpec): iolist.IoList {
   const result: iolist.IoList = [];
   const keys = Object.getOwnPropertyNames(spec.kids);
   for(const k of keys) {
     const kid = spec.kids[k];
-    if('struct' in kid) {
-      const struct = kid.struct;
+    if('struct' in kid || 'interface' in kid) {
       path.push(k);
-      result.push([k, ': ', formatSchemaType(path), ' & {\n'])
-      result.push(formatValueTypes(path, kid, struct));
+      result.push([k, ': ', formatSchemaType(path, kid), ' & {\n'])
+      result.push(formatValueTypes(path, kid));
       result.push('\},\n');
       path.pop();
     } else if('constant' in kid) {
@@ -183,11 +199,10 @@ function formatValueTypes(path: Array<string>, spec: NodeOutSpec, struct: Struct
 }
 
 function formatValues(name: string, path: Array<string>, spec: NodeOutSpec): iolist.IoList {
-  if('struct' in spec) {
-    const struct = spec.struct;
+  if('struct' in spec || 'interface' in spec) {
     return [
-      ['export const ', name, ': ', formatSchemaType(path), ' & {\n'],
-      formatValueTypes(path, spec, struct),
+      ['export const ', name, ': ', formatSchemaType(path, spec), ' & {\n'],
+      formatValueTypes(path, spec),
       '};\n',
     ]
   } else if('constant' in spec) {

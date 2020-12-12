@@ -74,6 +74,14 @@ export module persistent{
 export module $17735836485116689255 {
 }
 }
+export const Persistent: $Capnp.InterfaceSchema<types_.Persistent.Server<Buffer,Buffer, Buffer,Buffer>, types_.Persistent.Client<Buffer,Buffer, Buffer,Buffer>> & {
+SaveParams: $Capnp.StructSchema<types_.Persistent.SaveParams.Builder<Buffer,Buffer, Buffer,Buffer>, types_.Persistent.SaveParams.Reader<Buffer,Buffer, Buffer,Buffer>> & {
+},
+SaveResults: $Capnp.StructSchema<types_.Persistent.SaveResults.Builder<Buffer,Buffer, Buffer,Buffer>, types_.Persistent.SaveResults.Reader<Buffer,Buffer, Buffer,Buffer>> & {
+},
+};
+export const RealmGateway: $Capnp.InterfaceSchema<types_.RealmGateway.Server<Buffer,Buffer, Buffer,Buffer, Buffer,Buffer, Buffer,Buffer>, types_.RealmGateway.Client<Buffer,Buffer, Buffer,Buffer, Buffer,Buffer, Buffer,Buffer>> & {
+};
 
 }
 export default $tmp;

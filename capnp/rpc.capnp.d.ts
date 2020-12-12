@@ -404,41 +404,41 @@ export type Pos = types_.Exception.Type.Pos;
 export type Neg = types_.Exception.Type.Neg;
 }
 }
-export const Message: $Capnp.StructSchema<types_.Message.Reader, types_.Message.Builder> & {
+export const Message: $Capnp.StructSchema<types_.Message.Builder, types_.Message.Reader> & {
 };
-export const Bootstrap: $Capnp.StructSchema<types_.Bootstrap.Reader, types_.Bootstrap.Builder> & {
+export const Bootstrap: $Capnp.StructSchema<types_.Bootstrap.Builder, types_.Bootstrap.Reader> & {
 };
-export const Call: $Capnp.StructSchema<types_.Call.Reader, types_.Call.Builder> & {
+export const Call: $Capnp.StructSchema<types_.Call.Builder, types_.Call.Reader> & {
 };
-export const Return: $Capnp.StructSchema<types_.Return.Reader, types_.Return.Builder> & {
+export const Return: $Capnp.StructSchema<types_.Return.Builder, types_.Return.Reader> & {
 };
-export const Finish: $Capnp.StructSchema<types_.Finish.Reader, types_.Finish.Builder> & {
+export const Finish: $Capnp.StructSchema<types_.Finish.Builder, types_.Finish.Reader> & {
 };
-export const Resolve: $Capnp.StructSchema<types_.Resolve.Reader, types_.Resolve.Builder> & {
+export const Resolve: $Capnp.StructSchema<types_.Resolve.Builder, types_.Resolve.Reader> & {
 };
-export const Release: $Capnp.StructSchema<types_.Release.Reader, types_.Release.Builder> & {
+export const Release: $Capnp.StructSchema<types_.Release.Builder, types_.Release.Reader> & {
 };
-export const Disembargo: $Capnp.StructSchema<types_.Disembargo.Reader, types_.Disembargo.Builder> & {
+export const Disembargo: $Capnp.StructSchema<types_.Disembargo.Builder, types_.Disembargo.Reader> & {
 };
-export const Provide: $Capnp.StructSchema<types_.Provide.Reader, types_.Provide.Builder> & {
+export const Provide: $Capnp.StructSchema<types_.Provide.Builder, types_.Provide.Reader> & {
 };
-export const Accept: $Capnp.StructSchema<types_.Accept.Reader, types_.Accept.Builder> & {
+export const Accept: $Capnp.StructSchema<types_.Accept.Builder, types_.Accept.Reader> & {
 };
-export const Join: $Capnp.StructSchema<types_.Join.Reader, types_.Join.Builder> & {
+export const Join: $Capnp.StructSchema<types_.Join.Builder, types_.Join.Reader> & {
 };
-export const MessageTarget: $Capnp.StructSchema<types_.MessageTarget.Reader, types_.MessageTarget.Builder> & {
+export const MessageTarget: $Capnp.StructSchema<types_.MessageTarget.Builder, types_.MessageTarget.Reader> & {
 };
-export const Payload: $Capnp.StructSchema<types_.Payload.Reader, types_.Payload.Builder> & {
+export const Payload: $Capnp.StructSchema<types_.Payload.Builder, types_.Payload.Reader> & {
 };
-export const CapDescriptor: $Capnp.StructSchema<types_.CapDescriptor.Reader, types_.CapDescriptor.Builder> & {
+export const CapDescriptor: $Capnp.StructSchema<types_.CapDescriptor.Builder, types_.CapDescriptor.Reader> & {
 };
-export const PromisedAnswer: $Capnp.StructSchema<types_.PromisedAnswer.Reader, types_.PromisedAnswer.Builder> & {
-Op: $Capnp.StructSchema<types_.PromisedAnswer.Op.Reader, types_.PromisedAnswer.Op.Builder> & {
+export const PromisedAnswer: $Capnp.StructSchema<types_.PromisedAnswer.Builder, types_.PromisedAnswer.Reader> & {
+Op: $Capnp.StructSchema<types_.PromisedAnswer.Op.Builder, types_.PromisedAnswer.Op.Reader> & {
 },
 };
-export const ThirdPartyCapDescriptor: $Capnp.StructSchema<types_.ThirdPartyCapDescriptor.Reader, types_.ThirdPartyCapDescriptor.Builder> & {
+export const ThirdPartyCapDescriptor: $Capnp.StructSchema<types_.ThirdPartyCapDescriptor.Builder, types_.ThirdPartyCapDescriptor.Reader> & {
 };
-export const Exception: $Capnp.StructSchema<types_.Exception.Reader, types_.Exception.Builder> & {
+export const Exception: $Capnp.StructSchema<types_.Exception.Builder, types_.Exception.Reader> & {
 };
 
 }

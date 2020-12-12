@@ -566,42 +566,42 @@ export type Pos = types_.CodeGeneratorRequest.RequestedFile.Import.Pos;
 export type Neg = types_.CodeGeneratorRequest.RequestedFile.Import.Neg;
 }
 }
-export const Node: $Capnp.StructSchema<types_.Node.Reader, types_.Node.Builder> & {
-Parameter: $Capnp.StructSchema<types_.Node.Parameter.Reader, types_.Node.Parameter.Builder> & {
+export const Node: $Capnp.StructSchema<types_.Node.Builder, types_.Node.Reader> & {
+Parameter: $Capnp.StructSchema<types_.Node.Parameter.Builder, types_.Node.Parameter.Reader> & {
 },
-NestedNode: $Capnp.StructSchema<types_.Node.NestedNode.Reader, types_.Node.NestedNode.Builder> & {
+NestedNode: $Capnp.StructSchema<types_.Node.NestedNode.Builder, types_.Node.NestedNode.Reader> & {
 },
-SourceInfo: $Capnp.StructSchema<types_.Node.SourceInfo.Reader, types_.Node.SourceInfo.Builder> & {
-Member: $Capnp.StructSchema<types_.Node.SourceInfo.Member.Reader, types_.Node.SourceInfo.Member.Builder> & {
+SourceInfo: $Capnp.StructSchema<types_.Node.SourceInfo.Builder, types_.Node.SourceInfo.Reader> & {
+Member: $Capnp.StructSchema<types_.Node.SourceInfo.Member.Builder, types_.Node.SourceInfo.Member.Reader> & {
 },
 },
 };
-export const Field: $Capnp.StructSchema<types_.Field.Reader, types_.Field.Builder> & {
+export const Field: $Capnp.StructSchema<types_.Field.Builder, types_.Field.Reader> & {
 noDiscriminant: number,
 };
-export const Enumerant: $Capnp.StructSchema<types_.Enumerant.Reader, types_.Enumerant.Builder> & {
+export const Enumerant: $Capnp.StructSchema<types_.Enumerant.Builder, types_.Enumerant.Reader> & {
 };
-export const Superclass: $Capnp.StructSchema<types_.Superclass.Reader, types_.Superclass.Builder> & {
+export const Superclass: $Capnp.StructSchema<types_.Superclass.Builder, types_.Superclass.Reader> & {
 };
-export const Method: $Capnp.StructSchema<types_.Method.Reader, types_.Method.Builder> & {
+export const Method: $Capnp.StructSchema<types_.Method.Builder, types_.Method.Reader> & {
 };
-export const Type: $Capnp.StructSchema<types_.Type.Reader, types_.Type.Builder> & {
+export const Type: $Capnp.StructSchema<types_.Type.Builder, types_.Type.Reader> & {
 };
-export const Brand: $Capnp.StructSchema<types_.Brand.Reader, types_.Brand.Builder> & {
-Scope: $Capnp.StructSchema<types_.Brand.Scope.Reader, types_.Brand.Scope.Builder> & {
+export const Brand: $Capnp.StructSchema<types_.Brand.Builder, types_.Brand.Reader> & {
+Scope: $Capnp.StructSchema<types_.Brand.Scope.Builder, types_.Brand.Scope.Reader> & {
 },
-Binding: $Capnp.StructSchema<types_.Brand.Binding.Reader, types_.Brand.Binding.Builder> & {
+Binding: $Capnp.StructSchema<types_.Brand.Binding.Builder, types_.Brand.Binding.Reader> & {
 },
 };
-export const Value: $Capnp.StructSchema<types_.Value.Reader, types_.Value.Builder> & {
+export const Value: $Capnp.StructSchema<types_.Value.Builder, types_.Value.Reader> & {
 };
-export const Annotation: $Capnp.StructSchema<types_.Annotation.Reader, types_.Annotation.Builder> & {
+export const Annotation: $Capnp.StructSchema<types_.Annotation.Builder, types_.Annotation.Reader> & {
 };
-export const CapnpVersion: $Capnp.StructSchema<types_.CapnpVersion.Reader, types_.CapnpVersion.Builder> & {
+export const CapnpVersion: $Capnp.StructSchema<types_.CapnpVersion.Builder, types_.CapnpVersion.Reader> & {
 };
-export const CodeGeneratorRequest: $Capnp.StructSchema<types_.CodeGeneratorRequest.Reader, types_.CodeGeneratorRequest.Builder> & {
-RequestedFile: $Capnp.StructSchema<types_.CodeGeneratorRequest.RequestedFile.Reader, types_.CodeGeneratorRequest.RequestedFile.Builder> & {
-Import: $Capnp.StructSchema<types_.CodeGeneratorRequest.RequestedFile.Import.Reader, types_.CodeGeneratorRequest.RequestedFile.Import.Builder> & {
+export const CodeGeneratorRequest: $Capnp.StructSchema<types_.CodeGeneratorRequest.Builder, types_.CodeGeneratorRequest.Reader> & {
+RequestedFile: $Capnp.StructSchema<types_.CodeGeneratorRequest.RequestedFile.Builder, types_.CodeGeneratorRequest.RequestedFile.Reader> & {
+Import: $Capnp.StructSchema<types_.CodeGeneratorRequest.RequestedFile.Import.Builder, types_.CodeGeneratorRequest.RequestedFile.Import.Reader> & {
 },
 },
 };
