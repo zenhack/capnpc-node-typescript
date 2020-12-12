@@ -1,5 +1,5 @@
 import capnp from 'capnp';
-import schema from '../capnp/schema.capnp.js';
+import schema from 'capnp/schema.capnp.js';
 import { StrDict, impossible, assertDefined, definedOr } from './util.js';
 
 import * as iolist from './iolist.js';
@@ -523,9 +523,9 @@ function formatDeclFile(spec: FileOutSpec): iolist.IoList {
 
 function formatJsFile(spec: FileOutSpec): iolist.IoList {
   return [
-    'import $Capnp from "capnp";\n',
-    'const $tmp = $Capnp.importSystem(', JSON.stringify(spec.filename), ')\n',
-    'export default $tmp\n',
+    'module.exports = require("capnp").importSystem(',
+    JSON.stringify(spec.filename),
+    ');\n',
   ]
 }
 

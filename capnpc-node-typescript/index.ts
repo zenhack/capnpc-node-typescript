@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import capnp from 'capnp';
-import schema from '../capnp/schema.capnp.js';
+import schema from 'capnp/schema.capnp.js';
 
 import { cgrToFileContents } from './cgr.js';
 import * as iolist from './iolist.js';
